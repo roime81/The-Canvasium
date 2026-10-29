@@ -117,7 +117,7 @@ export function createStarterPlan({ prompt, sources }: PlanRequest): CanvasPlan 
   };
 }
 
-export async function createPlan(request: PlanRequest, options: { offline?: boolean } = {}): Promise<{
+export async function createPlan(request: PlanRequest, options: { offline?: boolean; model?: string } = {}): Promise<{
   plan: CanvasPlan;
   generatedBy: "starter-planner" | "ai-sdk";
 }> {
@@ -128,7 +128,7 @@ export async function createPlan(request: PlanRequest, options: { offline?: bool
 
   const provider = createOpenAI({ apiKey });
   const { object } = await generateObject({
-    model: provider(process.env.AI_MODEL ?? "gpt-4o-mini"),
+    model: provider(options.model ?? process.env.AI_MODEL ?? "gpt-4o-mini"),
     schema: CanvasPlanSchema,
     system: [
       "Create a structured Canvasium plan for the user's request.",

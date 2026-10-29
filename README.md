@@ -98,6 +98,17 @@ Without `AI_API_KEY`, Canvasium stays fully runnable using deterministic local p
 
 Gemini and Grok are not currently wired into the new planner. Adding Gemini requires an `@ai-sdk/google` adapter; Grok requires an OpenAI-compatible xAI client, plus provider/model selection configuration. Do not put provider keys in client-side environment variables or commit them to the repository.
 
+## Google sign-in and administration
+
+Canvasium uses Google sign-in through Auth.js and stores users, sessions, and planner settings in PostgreSQL. Set `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, and `AUTH_GOOGLE_SECRET` in `.env` (`openssl rand -base64 32` generates an `AUTH_SECRET`), then run:
+
+```sh
+pnpm db:up
+pnpm db:migrate
+```
+
+In Google Cloud, add `http://localhost:3000/api/auth/callback/google` and the production equivalent as authorized redirect URIs. Set `ADMIN_EMAILS` to a comma-separated allowlist; only those accounts can open `/admin` to enable or disable the planner and select its OpenAI model. API keys stay in server secrets. Set the same non-empty `INTERNAL_API_SECRET` for Next.js and Fastify in production so only the authenticated Next.js proxy can call the planner.
+
 The legacy Vite prototype can also use any OpenAI-compatible chat-completions endpoint through `AI_API_URL`, `AI_API_KEY`, and `AI_MODEL`:
 
 ```sh
