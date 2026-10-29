@@ -34,7 +34,7 @@ This example workspace is rendered with `CanvasRenderer` and demo connector data
 
 | Surface | URL | What it does |
 | --- | --- | --- |
-| **Prompt workspace** (frontend) | `/` | Describe any productivity goal (weekly plan, project tracker, meeting notes, habits, research) and get a Canvasium workspace. Switch or create workspaces; they persist on the server. |
+| **Prompt workspace** (frontend) | `/` | A chat-style prompt panel for any productivity goal. Generated workspaces persist on the server; use **My History** to revisit prompts and **How It Works** for mode controls and help. |
 | **Productivity tracker** (backend UI) | `/tracker` | A Canvasium dashboard of everything done through the app: prompts, success rate, workspaces, blocks, activity by day and category, and recent activity. Auto-refreshes every 15 seconds. |
 
 One Node server (`server/`) serves both pages and a JSON API, records every prompt as a tracked event, and stores data in `data/canvasium.json`.
