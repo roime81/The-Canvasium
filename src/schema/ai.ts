@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 import { BlockSchema, CanvasModeSchema, LIMITS, WidgetSchema } from "./canvas";
 
 /** Patch payloads for update_block: the block `type` and `id` are immutable. */
@@ -10,7 +9,7 @@ const UpdateFields = z
     columns: z.number().int().min(1).max(12),
     widgets: z.array(WidgetSchema).max(LIMITS.widgetsPerDashboard),
     appId: z.string().min(1).max(LIMITS.id),
-    props: z.record(z.unknown()),
+    props: z.record(z.string(), z.unknown()),
   })
   .partial()
   .strict();
@@ -35,4 +34,4 @@ export const AIResponseSchema = z.object({
 export type AIResponse = z.infer<typeof AIResponseSchema>;
 
 /** JSON Schema for function/tool-calling APIs, derived from the single Zod source of truth. */
-export const aiResponseJsonSchema = () => zodToJsonSchema(AIResponseSchema, "AIResponse");
+export const aiResponseJsonSchema = () => z.toJSONSchema(AIResponseSchema);

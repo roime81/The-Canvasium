@@ -17,7 +17,7 @@ const Id = z
   .regex(/^[A-Za-z0-9_.:-]+$/, "id may only contain letters, digits and _ . : -");
 
 /** Plain JSON-serializable record with a size cap, guarding against oversized model payloads. */
-const BoundedRecord = z.record(z.unknown()).refine((v) => JSON.stringify(v).length <= LIMITS.propsBytes, {
+const BoundedRecord = z.record(z.string(), z.unknown()).refine((v) => JSON.stringify(v).length <= LIMITS.propsBytes, {
   message: `payload exceeds ${LIMITS.propsBytes} bytes`,
 });
 
@@ -86,7 +86,7 @@ export const CanvasStateSchema = z
     mode: CanvasModeSchema,
     version: z.number().int().nonnegative(),
     order: z.array(z.string()).max(LIMITS.blocks),
-    blocks: z.record(BlockSchema),
+    blocks: z.record(z.string(), BlockSchema),
   })
   .superRefine((s, ctx) => {
     for (const id of s.order) {
