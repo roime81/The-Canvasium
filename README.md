@@ -1,10 +1,23 @@
 # The Canvasium
 
-The Canvasium is a typed, React-based canvas for composing AI-generated workspaces from text, dashboards, and custom app blocks. It validates proposed changes before applying them, connects widgets to pluggable data sources, and updates only the parts of the canvas that changed.
+**Turn a productivity goal into a workspace.** The Canvasium is an adaptable canvas for describing what you want to get done and shaping a workspace around it. Ask for a weekly plan, project tracker, meeting notes, habit tracker, research brief, or a workflow of your own. Refine the result with follow-up prompts instead of starting from a fixed-purpose app.
+
+The React and TypeScript canvas renders text, dashboards, and custom app blocks. An AI backend translates prompts into proposed workspace changes; Canvasium validates the changes and applies each batch atomically. Bring the AI provider and data integrations that fit your needs.
+
+> **Current integration status:** The demo UI and provider-neutral backend contract are included. A live AI provider is not bundled or enabled by default; configure `VITE_CANVASIUM_AI_ENDPOINT` and implement a server-side adapter to use prompts. Demo dashboard data is illustrative.
+
+## What can I make?
+
+- **Plan and focus:** weekly plans, daily priorities, goal breakdowns, and time-blocked schedules.
+- **Manage projects:** project dashboards, launch plans, milestone trackers, and next-action lists.
+- **Capture and organize:** meeting notes, decision logs, research briefs, and personal knowledge spaces.
+- **Build routines:** habit trackers, recurring checklists, and custom workflows.
+
+Start with an example prompt in the demo or describe a different goal in your own words. These are starting points, not fixed templates: your backend can interpret requests and return any supported Canvasium blocks and widgets.
 
 ## Preview
 
-This example workspace is rendered with `CanvasRenderer` and demo connector data:
+The repository includes an interactive prompt-first demo with starter ideas, a workspace preview, and sample connector data:
 
 ![The Canvasium project overview showing metric cards and a recent activity table](docs/canvasium-preview.png)
 
@@ -12,6 +25,7 @@ This example workspace is rendered with `CanvasRenderer` and demo connector data
 
 - **Typed canvas state:** Zod schemas define the normalized canvas, block types, widgets, modes, and data queries.
 - **Atomic updates:** A batch of canvas operations either applies in full or leaves the existing state untouched. Untouched blocks retain their object identity.
+- **Prompt-to-workspace flow:** Sends the prompt and current workspace to your configured backend; validates proposed operations before applying them.
 - **Validated AI responses:** Accepts a decoded response or JSON text (including fenced JSON), validates its operations, and reports parse, JSON, or patch failures.
 - **Reactive React renderer:** `CanvasRenderer` subscribes to canvas mode and ordering; each block subscribes to itself so sibling updates do not cause unnecessary block renders.
 - **Pluggable data connectors:** A small connector interface supports injected DuckDB executors, Microsoft Graph, vector search, or your own data source.
@@ -30,15 +44,14 @@ This example workspace is rendered with `CanvasRenderer` and demo connector data
 
 ## Run in GitHub Codespaces
 
-Open the repository on GitHub, choose **Code → Codespaces → Create codespace**, and wait for setup to finish. The dev container installs dependencies and forwards port `5173`. Copy `.env.example` to `.env`, then set `VITE_CANVASIUM_AI_ENDPOINT` to your server-side prompt endpoint before starting the demo:
+Open the repository on GitHub, choose **Code → Codespaces → Create codespace**, and wait for setup to finish. The dev container installs dependencies and forwards port `5173`. To connect prompting, copy `.env.example` to `.env` and set `VITE_CANVASIUM_AI_ENDPOINT` to your server-side prompt endpoint:
 
 ```sh
 cp .env.example .env
-# Set VITE_CANVASIUM_AI_ENDPOINT in .env to your backend URL
 npm run dev
 ```
 
-Open the forwarded **The Canvasium demo** port to explore the live canvas. You can describe a goal in your own words or start from examples for planning, project tracking, meeting notes, habits, and research. Generated changes are schema-validated and applied atomically.
+Open the forwarded **The Canvasium demo** port to explore the canvas. Without an endpoint, you can still explore the UI, workspace modes, and prompt starters; submitting a prompt displays setup guidance. With an endpoint configured, describe a goal in your own words and the response is schema-validated before changes are applied.
 
 ## Connect a prompt backend
 
@@ -85,10 +98,12 @@ The Canvasium is a source package and is not published to npm. Clone the reposit
 git clone https://github.com/roime81/The-Canvasium.git
 cd The-Canvasium
 npm ci
+cp .env.example .env
+# Set VITE_CANVASIUM_AI_ENDPOINT in .env to your backend URL
 npm run dev
 ```
 
-Set `VITE_CANVASIUM_AI_ENDPOINT` in `.env` to enable natural-language prompting. Vite serves the demo at `http://localhost:5173`. To verify the checkout:
+Vite serves the demo at `http://localhost:5173`. Natural-language prompting requires your configured server-side endpoint. To verify the checkout:
 
 ```sh
 npm run typecheck
