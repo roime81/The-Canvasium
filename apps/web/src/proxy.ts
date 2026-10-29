@@ -2,6 +2,9 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
 export const proxy = auth((request) => {
+  if (process.env.CANVASIUM_DESKTOP === "1") {
+    return NextResponse.next();
+  }
   if (!request.auth?.user) {
     return NextResponse.redirect(new URL("/login", request.nextUrl));
   }
