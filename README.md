@@ -6,7 +6,7 @@ The Canvasium is a typed, React-based canvas for composing AI-generated workspac
 
 The image below shows an example workspace rendered with `CanvasRenderer`. The app's current prompt interface is the compact chat panel described below:
 
-![The Canvasium project overview showing metric cards and a recent activity table](docs/canvasium-preview.png)
+![The Canvasium chat panel showing a generated weekly plan, a prompt box, and My History and How It Works links](docs/canvasium-preview.png)
 
 ## What it includes
 
