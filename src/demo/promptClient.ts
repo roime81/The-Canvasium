@@ -8,6 +8,15 @@ export interface PromptResult {
   canvas: CanvasState;
 }
 
+export interface PromptHistoryItem {
+  id: string;
+  at: string;
+  prompt: string;
+  category: string;
+  status: "applied" | "rejected" | "error";
+  source: "ai" | "template";
+}
+
 async function failure(response: Response): Promise<Error> {
   try {
     const body = (await response.json()) as { error?: unknown };
@@ -47,4 +56,13 @@ export async function listWorkspaces(
   const response = await fetcher("/api/workspaces");
   if (!response.ok) throw await failure(response);
   return ((await response.json()) as { workspaces: { id: string; blocks: number; version: number }[] }).workspaces;
+}
+
+export async function loadWorkspaceHistory(
+  workspaceId: string,
+  fetcher: typeof fetch = (...args) => fetch(...args),
+): Promise<PromptHistoryItem[]> {
+  const response = await fetcher(`/api/workspaces/${encodeURIComponent(workspaceId)}/history`);
+  if (!response.ok) throw await failure(response);
+  return ((await response.json()) as { history: PromptHistoryItem[] }).history;
 }

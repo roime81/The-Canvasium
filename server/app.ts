@@ -122,6 +122,24 @@ export function createApi(options: ApiOptions) {
           Object.entries(db.workspaces).map(([id, w]) => ({ id, blocks: w.order.length, version: w.version })),
         );
         send(res, 200, { workspaces });
+      } else if ((match = /^\/api\/workspaces\/([^/]+)\/history$/.exec(path))) {
+        if (method !== "GET") throw new HttpError(405, "Method not allowed");
+        const id = workspaceIdOf(decodeURIComponent(match[1] ?? ""));
+        const history = await storage.read((db) =>
+          db.events
+            .filter((event) => event.workspaceId === id)
+            .slice(-50)
+            .reverse()
+            .map(({ id: eventId, at, prompt, category, status, source }) => ({
+              id: eventId,
+              at,
+              prompt,
+              category,
+              status,
+              source,
+            })),
+        );
+        send(res, 200, { history });
       } else if ((match = /^\/api\/workspaces\/([^/]+)$/.exec(path))) {
         if (method !== "GET") throw new HttpError(405, "Method not allowed");
         const id = workspaceIdOf(decodeURIComponent(match[1] ?? ""));
