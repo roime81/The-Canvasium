@@ -175,3 +175,7 @@ To add a block type, add it to the discriminated `BlockSchema` in `src/schema/ca
 npm run typecheck
 npm test
 ```
+
+### Run and test on GitHub
+
+The `CI` workflow (`.github/workflows/ci.yml`) runs `npm ci`, `npm run typecheck`, and `npm test` on every push and pull request. To run it manually, open the repository's **Actions** tab, select **CI**, and choose **Run workflow**. You can also run the same commands in a GitHub Codespace on this repository.
