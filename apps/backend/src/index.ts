@@ -16,7 +16,8 @@ app.post("/api/plan", async (request, reply) => {
   }
 
   try {
-    return await createPlan(parsed.data);
+    const offline = request.headers["x-canvasium-offline"] === "true";
+    return await createPlan(parsed.data, { offline });
   } catch (error) {
     request.log.error(
       { errorName: error instanceof Error ? error.name : "UnknownError" },

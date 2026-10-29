@@ -1,7 +1,7 @@
 {
   "name": "The Canvasium",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
-  "postCreateCommand": "npm install --global pnpm@10.12.1 && pnpm install",
+  "postCreateCommand": "pnpm install --frozen-lockfile",
   "forwardPorts": [3000, 3001, 5173],
   "portsAttributes": {
     "3000": {
