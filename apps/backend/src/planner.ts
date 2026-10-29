@@ -20,6 +20,36 @@ const headingBlock = (id: string, content: string, level: 1 | 2 | 3) => ({
   content: escapeHtml(content),
 });
 
+function visualPreviewAsset(prompt: string) {
+  const label = escapeHtml(prompt.slice(0, 72));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+<rect width="1200" height="800" fill="#eef2ea"/>
+<circle cx="925" cy="210" r="152" fill="#d9e3d2"/>
+<path d="M170 580c80-235 234-351 445-351 142 0 268 53 375 160-136 37-253 115-351 233-103 124-259 181-469 171Z" fill="#6c8065"/>
+<path d="M380 446c74-107 166-160 275-160 91 0 170 37 237 112-104 23-193 82-267 177-68 86-151 128-250 128-41 0-84-9-130-26 52-74 97-151 135-231Z" fill="#fbfcf9"/>
+<circle cx="627" cy="401" r="10" fill="#20211f"/>
+<text x="74" y="106" fill="#20211f" font-family="Arial, Helvetica, sans-serif" font-size="32">Canvasium visual preview</text>
+<text x="74" y="710" fill="#4d5549" font-family="Arial, Helvetica, sans-serif" font-size="27">${label}</text>
+</svg>`;
+  return {
+    url: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`,
+    promptPrompted: prompt,
+    alt: `Generated visual preview for ${prompt}`,
+  };
+}
+
+function withVisualPreviews(plan: CanvasPlan, prompt: string): CanvasPlan {
+  if (plan.activeLayoutMode !== "visual_workspace") return plan;
+  return {
+    ...plan,
+    blocks: plan.blocks.map((block) =>
+      (block.type === "image" || block.type === "gallery") && block.assets.length === 0
+        ? { ...block, assets: [visualPreviewAsset(prompt)] }
+        : block,
+    ),
+  };
+}
+
 export function createStarterPlan({ prompt, sources }: PlanRequest): CanvasPlan {
   const normalized = prompt.toLowerCase();
   const sourceId = sources.find((source) =>
@@ -58,8 +88,8 @@ export function createStarterPlan({ prompt, sources }: PlanRequest): CanvasPlan 
     };
   }
 
-  if (/\b(image|visual|illustration|design|moodboard|gallery)\b/.test(normalized)) {
-    return {
+  if (/\b(image|visual|illustration|design|moodboard|gallery|draw|paint|render|illustrate|sketch|craft)\b/.test(normalized)) {
+    return withVisualPreviews({
       activeLayoutMode: "visual_workspace",
       title: "Visual workspace",
       blocks: [
@@ -71,7 +101,7 @@ export function createStarterPlan({ prompt, sources }: PlanRequest): CanvasPlan 
           layout: { x: 0, y: 0, w: 8, h: 5 },
         },
       ],
-    };
+    }, prompt);
   }
 
   return {
@@ -103,12 +133,12 @@ export async function createPlan(request: PlanRequest, options: { offline?: bool
     system: [
       "Create a structured Canvasium plan for the user's request.",
       "Choose document, dashboard, or visual_workspace based on intent.",
-      "Do not invent data values, connected sources, or generated image URLs.",
+      "Do not invent data values or connected sources.",
       "For dashboard widgets without a source, use dataSourceId 'attach-a-data-source'.",
-      "Use an empty assets array for image blocks until an image engine is configured.",
+      "For image blocks, use an empty assets array; Canvasium supplies a local visual preview.",
     ].join(" "),
     prompt: `${request.prompt}\n\nConnected source metadata and schemas (no file contents): ${JSON.stringify(request.sources)}`,
   });
 
-  return { plan: object, generatedBy: "ai-sdk" };
+  return { plan: withVisualPreviews(object, request.prompt), generatedBy: "ai-sdk" };
 }

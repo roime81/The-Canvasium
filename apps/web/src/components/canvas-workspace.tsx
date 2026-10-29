@@ -80,10 +80,16 @@ function CanvasBlockView({ block }: { block: CanvasBlock }) {
   return (
     <article className="canvas-card visual-card">
       <span className="card-kicker">VISUAL WORKSPACE</span>
-      <div className="visual-placeholder" aria-label="Generated images will appear here">Your images will appear here</div>
-      {block.assets.map((asset) => (
-        <img key={asset.url} src={asset.url} alt={asset.alt ?? asset.promptPrompted} />
-      ))}
+      {block.assets.length === 0
+        ? <div className="visual-placeholder" aria-label="Generated images will appear here">Your images will appear here</div>
+        : <div className="visual-assets">
+          {block.assets.map((asset) => (
+            <figure key={asset.url}>
+              <img src={asset.url} alt={asset.alt ?? asset.promptPrompted} />
+              <figcaption>Generated local preview</figcaption>
+            </figure>
+          ))}
+        </div>}
     </article>
   );
 }
@@ -240,23 +246,33 @@ export function CanvasWorkspace() {
         ) : (
           <>
             <h1 className="canvas-title">{title}</h1>
-            <GridLayout
-              className="canvas-grid"
-              layout={layout}
-              cols={12}
-              rowHeight={72}
-              width={canvasWidth}
-              onLayoutChange={saveLayout}
-              isDraggable
-              isResizable={mode !== "document"}
-              compactType="vertical"
-            >
-              {blocks.map((block) => (
-                <div key={block.id} className="canvas-grid-item">
-                  <CanvasBlockView block={block} />
-                </div>
-              ))}
-            </GridLayout>
+            {mode === "document" ? (
+              <div className="document-flow">
+                {blocks.map((block) => (
+                  <div key={block.id} className="document-block">
+                    <CanvasBlockView block={block} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <GridLayout
+                className="canvas-grid"
+                layout={layout}
+                cols={12}
+                rowHeight={72}
+                width={canvasWidth}
+                onLayoutChange={saveLayout}
+                isDraggable
+                isResizable
+                compactType="vertical"
+              >
+                {blocks.map((block) => (
+                  <div key={block.id} className="canvas-grid-item">
+                    <CanvasBlockView block={block} />
+                  </div>
+                ))}
+              </GridLayout>
+            )}
           </>
         )}
       </section>
