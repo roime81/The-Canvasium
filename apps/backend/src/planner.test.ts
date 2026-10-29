@@ -28,6 +28,19 @@ describe("createStarterPlan", () => {
     expect(plan.blocks.find((block) => block.type === "bi_widget")?.dataSourceId).toBe("sales-file");
   });
 
+  it("creates a visible visual preview for an illustration request", () => {
+    const plan = createStarterPlan({ prompt: "Craft me a duck", sources: [] });
+
+    expect(plan.activeLayoutMode).toBe("visual_workspace");
+    const gallery = plan.blocks.find((block) => block.type === "gallery");
+    expect(gallery?.type).toBe("gallery");
+    if (gallery?.type !== "gallery") throw new Error("Expected a visual gallery");
+    expect(gallery.assets).toHaveLength(1);
+    expect(gallery.assets[0]?.url).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(gallery.assets[0]?.promptPrompted).toBe("Craft me a duck");
+    expect(CanvasPlanSchema.safeParse(plan).success).toBe(true);
+  });
+
   it("escapes user text before it becomes editable HTML content", () => {
     const plan = createStarterPlan({ prompt: "<script>alert(1)</script>", sources: [] });
     const heading = plan.blocks[0];

@@ -4,9 +4,9 @@ The Canvasium is a natural-language productivity canvas. The repository now incl
 
 ## Canvas renderer preview
 
-The Next.js workspace after a dashboard prompt, with an editable canvas, chart preview, and floating command bar:
+The Next.js workspace after a visual prompt, with a rendered local preview and floating command bar:
 
-![The Canvasium workspace showing a dashboard chart preview and floating prompt bar](docs/canvasium-preview.png)
+![The Canvasium workspace showing a generated visual preview and floating prompt bar](docs/canvasium-preview.png)
 
 ## Monorepo foundation
 
@@ -16,7 +16,7 @@ The Next.js workspace after a dashboard prompt, with an editable canvas, chart p
 | `apps/backend` | Fastify API with a validated starter planner endpoint |
 | `packages/types` | Shared Zod schemas and TypeScript types for canvas state, content blocks, data sources, and plans |
 
-The starter UI reacts to prompts with document, dashboard, or visual-workspace blocks. It includes editable Tiptap text, draggable/resizable layout blocks, and in-browser DuckDB schema inspection for CSV/Parquet files (PDFs retain metadata only). Fastify uses a deterministic planner by default; setting `AI_API_KEY` enables Vercel AI SDK structured planning through OpenAI with source schemas as context. File contents remain in the browser; live chart queries, PDF extraction, image generation, and SharePoint/Datalake connectors remain follow-up work.
+The starter UI reacts to prompts with document, dashboard, or visual-workspace blocks. Document blocks flow as an editable page, while dashboard and visual blocks use a draggable/resizable grid. Visual prompts such as “Craft me a duck” display a deterministic local SVG preview, so they remain useful without an image-provider key. It includes editable Tiptap text and in-browser DuckDB schema inspection for CSV/Parquet files (PDFs retain metadata only). Fastify uses a deterministic planner by default; setting `AI_API_KEY` enables Vercel AI SDK structured planning through OpenAI with source schemas as context. File contents remain in the browser; live chart queries, PDF extraction, provider-backed image generation, and SharePoint/Datalake connectors remain follow-up work.
 
 The typed Vite canvas library and tracker described below remain available as a working prototype.
 
