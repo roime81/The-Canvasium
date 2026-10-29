@@ -159,7 +159,19 @@ The legacy Canvasium library public API is exported from `src/index.ts` and incl
 
 ## Downloadable Windows desktop app
 
-The Electron desktop app is self-contained: it keeps the canvas in the current Windows user's application-data folder and does not require Google sign-in or PostgreSQL. To use OpenAI, create `%APPDATA%\\The Canvasium\\.env` after the first launch:
+The Electron desktop app is self-contained: it keeps the canvas in the current Windows user's application-data folder and does not require Google sign-in or PostgreSQL.
+
+### Download and run
+
+1. Open the repository's **Releases** page and download either the Windows installer (`The Canvasium Setup ... .exe`) or portable ZIP (`The Canvasium ... win.zip`).
+2. Run the installer, or extract the ZIP and open `The Canvasium.exe`.
+3. Use the prompt bar immediately with deterministic local plans. Your local canvas is saved automatically.
+
+The first downloadable files are produced by **Actions → Desktop release → Run workflow**. After the workflow finishes, download them from its **Artifacts** section; publishing a `desktop-v*` tag also attaches them to a GitHub Release.
+
+### Use an optional OpenAI key
+
+To enable OpenAI text planning and image generation, create `%APPDATA%\\The Canvasium\\.env` after the first launch:
 
 ```env
 AI_API_KEY=your_openai_api_key
@@ -167,14 +179,18 @@ AI_MODEL=gpt-4o-mini
 OPENAI_IMAGE_MODEL=gpt-image-1
 ```
 
-Without a key it continues to work with deterministic local plans. Maintainers can generate the Windows `.exe` installer and portable `.zip` on Windows with:
+Restart the desktop app after changing this file. Without a key it continues to work with deterministic local plans.
+
+### Build a release
+
+Maintainers can generate the Windows `.exe` installer and portable `.zip` on Windows with:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm desktop:dist
 ```
 
-The **Desktop release** GitHub Actions workflow publishes both artifacts for every `desktop-v*` tag. Use **Actions → Desktop release → Run workflow** to build downloadable artifacts without creating a tag.
+The **Desktop release** GitHub Actions workflow publishes both artifacts for every `desktop-v*` tag.
 
 ## How to use
 
