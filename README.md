@@ -28,19 +28,28 @@ This example workspace is rendered with `CanvasRenderer` and demo connector data
 | `src/ui` | React context, renderer, block components, and connector-query hook |
 | `test` | Tests for validation, patching, atomicity, and rendering |
 
-## Getting started
+## How to install
 
-The repository is currently a private source package; it does not define a publish, build, or development-server script. To work with it locally:
+The Canvasium is currently a private source package and is not published to npm. Clone the repository and install its dependencies:
 
 ```sh
 git clone https://github.com/roime81/The-Canvasium.git
 cd The-Canvasium
 npm install
+```
+
+Verify the checkout with:
+
+```sh
 npm run typecheck
 npm test
 ```
 
-The package exports its public API from `src/index.ts`. In a React application configured to compile TypeScript and JSX, create a store, provide its environment, and render the canvas:
+There is no build or development-server script yet. To use Canvasium in an application, consume the TypeScript source from this repository or include it in your workspace; the app's toolchain must support React, TypeScript, and JSX. The public API is exported from `src/index.ts`.
+
+## How to use
+
+Create a `CanvasStore`, provide a `ConnectorRegistry` and app registry through `CanvasProvider`, then render `CanvasRenderer`. Use `routeAIResponse` to validate and apply canvas operations:
 
 ```tsx
 import {
@@ -51,6 +60,7 @@ import {
   createEmptyCanvas,
   routeAIResponse,
 } from "./src";
+import { createRoot } from "react-dom/client";
 
 const store = new CanvasStore(createEmptyCanvas("workspace"));
 const connectors = new ConnectorRegistry();
@@ -72,16 +82,17 @@ if (!result.ok) {
   throw new Error(result.error);
 }
 
-export function Workspace() {
-  return (
-    <CanvasProvider env={{ store, connectors, apps: {} }}>
-      <CanvasRenderer />
-    </CanvasProvider>
-  );
-}
+const root = document.getElementById("root");
+if (!root) throw new Error('Missing element with id "root"');
+
+createRoot(root).render(
+  <CanvasProvider env={{ store, connectors, apps: {} }}>
+    <CanvasRenderer />
+  </CanvasProvider>,
+);
 ```
 
-`CanvasProvider` requires a `CanvasStore`, a `ConnectorRegistry`, and an app-component registry. You can optionally provide `renderMarkdown` to render markdown-formatted text blocks; without it, text is displayed as pre-wrapped text.
+`CanvasProvider` requires a `CanvasStore`, a `ConnectorRegistry`, and an app-component registry. Register data connectors for dashboard queries and React components for custom app blocks. You can optionally provide `renderMarkdown` to render markdown-formatted text blocks; without it, text is displayed as pre-wrapped text.
 
 ## Applying AI operations
 
