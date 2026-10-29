@@ -10,6 +10,10 @@ const app = Fastify({ logger: true });
 app.get("/health", async () => ({ status: "ok" }));
 
 app.post("/api/plan", async (request, reply) => {
+  const internalSecret = process.env.INTERNAL_API_SECRET;
+  if (internalSecret && request.headers["x-canvasium-internal-secret"] !== internalSecret) {
+    return reply.code(401).send({ error: "Unauthorized planner request" });
+  }
   const parsed = PlanRequestSchema.safeParse(request.body);
   if (!parsed.success) {
     return reply.code(400).send({ error: "Invalid prompt", issues: parsed.error.issues });
@@ -17,7 +21,10 @@ app.post("/api/plan", async (request, reply) => {
 
   try {
     const offline = request.headers["x-canvasium-offline"] === "true";
-    return await createPlan(parsed.data, { offline });
+    const model = typeof request.headers["x-canvasium-model"] === "string"
+      ? request.headers["x-canvasium-model"]
+      : undefined;
+    return await createPlan(parsed.data, { offline, model });
   } catch (error) {
     request.log.error(
       { errorName: error instanceof Error ? error.name : "UnknownError" },

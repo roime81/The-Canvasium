@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: canvasium
+      POSTGRES_USER: canvasium
+      POSTGRES_PASSWORD: canvasium
+    ports:
+      - "5432:5432"
+    volumes:
+      - canvasium-postgres:/var/lib/postgresql/data
+
+volumes:
+  canvasium-postgres:

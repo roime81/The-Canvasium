@@ -11,6 +11,8 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "start": "turbo run start",
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "pnpm --filter @canvasium/web exec prisma migrate deploy",
     "codespaces:smoke": "node scripts/codespaces-smoke.mjs",
     "typecheck": "pnpm legacy:typecheck && turbo run typecheck",
     "test": "pnpm legacy:test && turbo run test",
