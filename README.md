@@ -2,9 +2,9 @@
 
 The Canvasium is a typed, React-based canvas for composing AI-generated workspaces from text, dashboards, and custom app blocks. It validates proposed changes before applying them, connects widgets to pluggable data sources, and updates only the parts of the canvas that changed.
 
-## Preview
+## Canvas renderer preview
 
-The prompt panel after asking it to "Plan my week". The generated workspace is rendered with `CanvasRenderer` inside the conversation:
+The image below shows an example workspace rendered with `CanvasRenderer`. The app's current prompt interface is the compact chat panel described below:
 
 ![The Canvasium chat panel showing a generated weekly plan, a prompt box, and My History and How It Works links](docs/canvasium-preview.png)
 
