@@ -9,3 +9,12 @@ Generative, adaptive UI canvas. Layers:
 - `src/ui` – `CanvasRenderer`; per-block subscriptions so unaffected blocks don't re-render.
 
 Add a block type: extend `BlockSchema`, then handle it in `renderBlock` (compile-time exhaustive).
+
+## Production notes
+
+- **Scripts:** `npm run lint | typecheck | test:coverage | build`; CI runs all of them plus `npm audit`.
+- **Untrusted model output:** every response is Zod-validated with size/ID limits (`LIMITS`), applied atomically, and failures are returned (never thrown into the UI) via `routeAIResponse`. Use `aiResponseJsonSchema()` for tool-calling.
+- **Connectors:** `ConnectorRegistry` enforces timeout, abort, row cap and optional dedupe. `DuckDbConnector` rejects non-read-only SQL, but your injected executor must *also* use a read-only DuckDB with file/network access disabled. `GraphConnector` is read-only, path-allowlisted, same-origin and never follows redirects.
+- **Rendering:** per-block subscriptions and error boundaries; text is rendered as text (no `dangerouslySetInnerHTML`). If you supply `renderMarkdown`, it must sanitize its output.
+- **Undo/redo and telemetry:** `CanvasStore` (`undo`, `redo`, `onDispatch`), `ConnectorRegistry` (`onQuery`), `CanvasRenderer` (`onBlockError`).
+- **Not included:** persistence, auth, and the LLM client itself; supply those in the host app.

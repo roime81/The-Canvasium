@@ -22,7 +22,6 @@ export function useConnectorQuery(query: DataQuery | undefined): QueryState {
       .then((data) => !ctrl.signal.aborted && setState({ status: "ready", data }))
       .catch((e: unknown) => !ctrl.signal.aborted && setState({ status: "error", error: String(e) }));
     return () => ctrl.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, connectors]);
 
   return state;
