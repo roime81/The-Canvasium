@@ -73,7 +73,20 @@ The smoke check sends a deterministic offline prompt, so it does not need an API
 
 ## Connect an AI provider (optional)
 
-For the new Fastify planner, copy `.env.example` to `.env` and set `AI_API_KEY` (OpenAI) and optionally `AI_MODEL`. The Fastify planner loads this root `.env`; without a key, it uses deterministic starter plans.
+The new Fastify planner supports OpenAI through the Vercel AI SDK. In a Codespace or local checkout, copy the example configuration and add an OpenAI API key:
+
+```sh
+cp .env.example .env
+```
+
+```env
+AI_API_KEY=your_openai_api_key
+AI_MODEL=gpt-4o-mini
+```
+
+Restart `pnpm dev` after changing `.env`. The Fastify planner loads this root file; without a key, it uses deterministic starter plans. Keep the key in a Codespaces secret or local `.env` file and never commit it.
+
+Gemini and Grok are not currently wired into the new planner. Adding them requires a provider adapter (`@ai-sdk/google` for Gemini or an OpenAI-compatible xAI client for Grok) and provider/model selection configuration.
 
 The legacy Vite prototype can also use any OpenAI-compatible chat-completions endpoint through `AI_API_URL`, `AI_API_KEY`, and `AI_MODEL`:
 
