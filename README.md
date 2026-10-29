@@ -73,7 +73,30 @@ The smoke check sends a deterministic offline prompt, so it does not need an API
 
 ## Connect an AI provider (optional)
 
-For the new Fastify planner, copy `.env.example` to `.env` and set `AI_API_KEY` (OpenAI) and optionally `AI_MODEL`. The Fastify planner loads this root `.env`; without a key, it uses deterministic starter plans.
+The new Fastify planner supports OpenAI through the Vercel AI SDK. Create a local environment file:
+
+```sh
+cp .env.example .env
+```
+
+Set an OpenAI API key and a model in `.env`:
+
+```env
+AI_API_KEY=your_openai_api_key
+AI_MODEL=gpt-4o-mini
+```
+
+Restart `pnpm dev` after changing `.env`, then open port `3000` and submit a prompt in the command bar. The browser sends the prompt and connected-source schemas to Fastify; Fastify requests a structured canvas plan from OpenAI, validates it, and returns document, dashboard, or visual blocks for the canvas.
+
+For Codespaces, store `AI_API_KEY` as a Codespaces secret rather than committing it:
+
+1. Open **GitHub Settings → Codespaces → Secrets**.
+2. Create a secret named `AI_API_KEY` with your OpenAI API key.
+3. Rebuild or create the Codespace, then set `AI_MODEL` in `.env` if you want a model other than `gpt-4o-mini`.
+
+Without `AI_API_KEY`, Canvasium stays fully runnable using deterministic local plans. This is the expected mode for `pnpm codespaces:smoke`; it never sends a request to an external model.
+
+Gemini and Grok are not currently wired into the new planner. Adding Gemini requires an `@ai-sdk/google` adapter; Grok requires an OpenAI-compatible xAI client, plus provider/model selection configuration. Do not put provider keys in client-side environment variables or commit them to the repository.
 
 The legacy Vite prototype can also use any OpenAI-compatible chat-completions endpoint through `AI_API_URL`, `AI_API_KEY`, and `AI_MODEL`:
 
