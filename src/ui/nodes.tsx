@@ -30,7 +30,7 @@ function WidgetBody({ widget, columns, rows }: { widget: Widget; columns: string
     const col = columns[0];
     return <strong>{first && col ? String(first[col]) : "—"}</strong>;
   }
-  // "chart" falls back to a table until a charting component is plugged in.
+  if (widget.kind === "chart") return <BarChart columns={columns} rows={rows} />;
   return (
     <table>
       <thead>
@@ -60,3 +60,30 @@ export const AppNode = memo(function AppNode({ block }: { block: AppBlock }) {
   const App = apps[block.appId];
   return App ? <App block={block} /> : <p role="alert">Unknown app "{block.appId}"</p>;
 });
+
+/** Dependency-free SVG bar chart: first column = label, second = numeric value. */
+export function BarChart({ columns, rows }: { columns: string[]; rows: Record<string, unknown>[] }) {
+  const [labelCol, valueCol] = columns;
+  if (!labelCol || !valueCol) return <p>No data</p>;
+  const data = rows.map((r) => ({ label: String(r[labelCol] ?? ""), value: Number(r[valueCol]) || 0 }));
+  const max = Math.max(1, ...data.map((d) => d.value));
+  const w = 28;
+  const h = 120;
+  return (
+    <svg role="img" aria-label={`${valueCol} by ${labelCol}`} viewBox={`0 0 ${data.length * w + 8} ${h + 20}`} width="100%" style={{ maxHeight: 200 }}>
+      {data.map((d, i) => {
+        const bh = (d.value / max) * h;
+        return (
+          <g key={i}>
+            <rect x={i * w + 6} y={h - bh} width={w - 8} height={bh} fill="currentColor" opacity={0.75}>
+              <title>{`${d.label}: ${d.value}`}</title>
+            </rect>
+            <text x={i * w + 6 + (w - 8) / 2} y={h + 12} fontSize="7" textAnchor="middle">
+              {d.label.slice(0, 4)}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}

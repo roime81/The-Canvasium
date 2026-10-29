@@ -1,5 +1,18 @@
 # The Canvasium
 
+## Run it
+
+```bash
+npm install
+npm run dev        # serves http://localhost:5173
+```
+
+Chat on the left, live canvas on the right. Works immediately with a built-in offline assistant
+(`show a sales dashboard`, `note: # Hello`, `add a counter app`, `clear`) or paste raw JSON ops.
+For free-form requests open **Settings** and add an OpenAI-compatible API key (stored only in your
+browser's localStorage; use a backend proxy for shared deployments). Canvas state persists across reloads.
+`npm run build:app` outputs the static site to `dist-app/`.
+
 Generative, adaptive UI canvas. Layers:
 
 - `src/schema` – Zod schemas: `CanvasState` (normalized blocks) and AI response ops.
