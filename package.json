@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "tsx server/index.ts --dev",
+    "build": "vite build",
+    "start": "vite build && tsx server/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -13,9 +15,11 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "react-dom": "^18.3.1",
+    "tsx": "^4.23.15",
     "typescript": "^5.5.4",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"

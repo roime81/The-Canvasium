@@ -46,3 +46,33 @@ export class VectorSearchConnector implements DataConnector {
     return { columns: ["id", "score", "text"], rows };
   }
 }
+
+/** Serves rows embedded in the query itself: `params.columns` (string[]) and `params.rows` (objects). */
+export class StaticConnector implements DataConnector {
+  readonly id = "static";
+  async execute(q: DataQuery): Promise<QueryResult> {
+    const rows = Array.isArray(q.params.rows)
+      ? q.params.rows.filter((r): r is Record<string, unknown> => typeof r === "object" && r !== null)
+      : [];
+    const columns = Array.isArray(q.params.columns)
+      ? q.params.columns.map(String)
+      : Object.keys(rows[0] ?? {});
+    return { columns, rows };
+  }
+}
+
+/** Reads `GET {baseUrl}/{statement}` and expects a `QueryResult` JSON body. */
+export class HttpConnector implements DataConnector {
+  constructor(
+    readonly id: string,
+    private baseUrl: string,
+    private fetcher: typeof fetch = (...args) => fetch(...args),
+  ) {}
+  async execute(q: DataQuery, ctx: QueryContext): Promise<QueryResult> {
+    const res = await this.fetcher(`${this.baseUrl}/${encodeURIComponent(q.statement)}`, {
+      signal: ctx.signal ?? null,
+    });
+    if (!res.ok) throw new Error(`${this.id} request failed: ${res.status}`);
+    return (await res.json()) as QueryResult;
+  }
+}

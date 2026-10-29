@@ -26,76 +26,66 @@ This example workspace is rendered with `CanvasRenderer` and demo connector data
 | `src/router` | AI response parsing, validation, and dispatch |
 | `src/connectors` | Connector interface, registry, and DuckDB/Graph/vector adapters |
 | `src/ui` | React context, renderer, block components, and connector-query hook |
+| `server` | Node API, storage, template planner, AI provider adapter, tracker queries |
+| `src/demo`, `src/tracker` | Prompt workspace and tracker UIs |
 | `test` | Tests for validation, patching, atomicity, and rendering |
+
+## Two capabilities
+
+| Surface | URL | What it does |
+| --- | --- | --- |
+| **Prompt workspace** (frontend) | `/` | Describe any productivity goal (weekly plan, project tracker, meeting notes, habits, research) and get a Canvasium workspace. Switch or create workspaces; they persist on the server. |
+| **Productivity tracker** (backend UI) | `/tracker` | A Canvasium dashboard of everything done through the app: prompts, success rate, workspaces, blocks, activity by day and category, and recent activity. Auto-refreshes every 15 seconds. |
+
+One Node server (`server/`) serves both pages and a JSON API, records every prompt as a tracked event, and stores data in `data/canvasium.json`.
 
 ## Run in GitHub Codespaces
 
-Open the repository on GitHub, choose **Code → Codespaces → Create codespace**, and wait for setup to finish. The dev container installs dependencies and forwards port `5173`. Copy `.env.example` to `.env`, then set `VITE_CANVASIUM_AI_ENDPOINT` to your server-side prompt endpoint before starting the demo:
+Choose **Code → Codespaces → Create codespace**. The dev container installs dependencies and forwards port `5173`.
 
 ```sh
-cp .env.example .env
-# Set VITE_CANVASIUM_AI_ENDPOINT in .env to your backend URL
 npm run dev
 ```
 
-Open the forwarded **The Canvasium demo** port to explore the live canvas. You can describe a goal in your own words or start from examples for planning, project tracking, meeting notes, habits, and research. Generated changes are schema-validated and applied atomically.
+Open the forwarded port for the prompt workspace, and add `/tracker` for the tracker. With no AI configured, prompts use built-in offline templates.
 
-## Connect a prompt backend
+## Connect an AI provider (optional)
 
-The demo sends a `POST` request to the configured `VITE_CANVASIUM_AI_ENDPOINT`. The JSON request body contains the user's prompt and the current canvas state:
+Any OpenAI-compatible chat-completions endpoint works. Copy `.env.example` to `.env`:
 
-```json
-{
-  "prompt": "Make a project tracker for a product launch",
-  "canvas": {
-    "id": "canvasium-demo",
-    "mode": "dashboard",
-    "version": 1,
-    "order": [],
-    "blocks": {}
-  }
-}
+```sh
+AI_API_URL=https://api.openai.com/v1/chat/completions
+AI_API_KEY=your-key
+AI_MODEL=gpt-4o-mini
 ```
 
-Return a JSON object matching the `AIResponse` schema, with an `ops` array and optional `message` or `intent` fields. For example:
+Keys stay on the server. Model output is validated before it changes a workspace; invalid output is rejected (422), provider failures return 502, and both are tracked. Other settings: `PORT` (5173), `HOST` (127.0.0.1), `DATA_FILE` (`data/canvasium.json`).
 
-```json
-{
-  "message": "I created a launch tracker with milestones and next actions.",
-  "ops": [
-    {
-      "op": "add_block",
-      "block": {
-        "id": "launch-plan",
-        "type": "text",
-        "content": "## Product launch\\n\\n- Define milestones\\n- Assign owners\\n- Review next actions"
-      }
-    }
-  ]
-}
-```
+## API
 
-Implement the endpoint in your server and connect it to any model/provider you choose. Keep provider API keys and authentication on the server; do not put secrets in `VITE_` variables because those are included in browser code. The backend should instruct its model to return Canvasium operations (see `src/schema/ai.ts`) and return them as JSON. Canvasium validates the response before changing the workspace. The repository does not include an AI provider or backend.
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/health` | Health check |
+| `GET /api/workspaces` | List workspaces |
+| `GET /api/workspaces/:id` | Load a workspace canvas |
+| `POST /api/prompt` | `{ "workspaceId", "prompt" }` (JSON, max 4000 chars) → updated canvas |
+| `GET /api/tracker/:statement` | Tracker queries: `prompts`, `success-rate`, `workspaces`, `blocks`, `recent-activity`, `by-category`, `by-day`, `workspace-list` |
+
+**Security:** there is no authentication, and the server binds to `127.0.0.1` by default. Don't expose it publicly without adding auth.
 
 ## Run locally
-
-The Canvasium is a source package and is not published to npm. Clone the repository and install its dependencies:
 
 ```sh
 git clone https://github.com/roime81/The-Canvasium.git
 cd The-Canvasium
 npm ci
-npm run dev
-```
-
-Set `VITE_CANVASIUM_AI_ENDPOINT` in `.env` to enable natural-language prompting. Vite serves the demo at `http://localhost:5173`. To verify the checkout:
-
-```sh
+npm run dev      # dev server with HMR on http://localhost:5173
+npm start        # build, then serve production bundle
 npm run typecheck
 npm test
 ```
 
-To use Canvasium in another application, consume the TypeScript source from this repository or include it in your workspace; the app's toolchain must support React, TypeScript, and JSX. The public API is exported from `src/index.ts`.
+To use Canvasium in another application, consume the TypeScript source from this repository; the toolchain must support React, TypeScript, and JSX. The public API is exported from `src/index.ts` and includes `StaticConnector`, `HttpConnector`, `renderBasicMarkdown`, and `CanvasStore.replace`.
 
 ## How to use
 
