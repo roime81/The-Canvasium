@@ -26,6 +26,12 @@ describe("router + patch", () => {
     expect(after.version).toBe(before.version + 1);
   });
 
+  it("changes canvas mode through the store", () => {
+    const s = seeded();
+    s.dispatch([{ op: "set_mode", mode: "document" }]);
+    expect(s.getState()).toMatchObject({ mode: "document", version: 2 });
+  });
+
   it("is atomic on failure", () => {
     const s = seeded();
     const before = s.getState();

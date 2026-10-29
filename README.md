@@ -2,9 +2,9 @@
 
 The Canvasium is a typed, React-based canvas for composing AI-generated workspaces from text, dashboards, and custom app blocks. It validates proposed changes before applying them, connects widgets to pluggable data sources, and updates only the parts of the canvas that changed.
 
-## Preview
+## Canvas renderer preview
 
-This example workspace is rendered with `CanvasRenderer` and demo connector data:
+The image below shows an example workspace rendered with `CanvasRenderer`. The app's current prompt interface is the compact chat panel described below:
 
 ![The Canvasium project overview showing metric cards and a recent activity table](docs/canvasium-preview.png)
 
@@ -34,10 +34,11 @@ This example workspace is rendered with `CanvasRenderer` and demo connector data
 
 | Surface | URL | What it does |
 | --- | --- | --- |
-| **Prompt workspace** (frontend) | `/` | Describe any productivity goal (weekly plan, project tracker, meeting notes, habits, research) and get a Canvasium workspace. Switch or create workspaces; they persist on the server. |
+| **Prompt workspace** (frontend) | `/` | A chat-style prompt panel for any productivity goal. Send a prompt with the arrow button; the conversation and generated workspace appear above it. **My History** shows saved prompts for the selected workspace. **How It Works** explains the app and includes canvas mode controls. |
 | **Productivity tracker** (backend UI) | `/tracker` | A Canvasium dashboard of everything done through the app: prompts, success rate, workspaces, blocks, activity by day and category, and recent activity. Auto-refreshes every 15 seconds. |
 
 One Node server (`server/`) serves both pages and a JSON API, records every prompt as a tracked event, and stores data in `data/canvasium.json`.
+Open **How It Works** and use its **Canvas mode** controls to switch the generated workspace between Dashboard, Document, and App layouts. Modes affect the presentation of blocks; they do not erase workspace content.
 
 ## Run in GitHub Codespaces
 
@@ -68,6 +69,7 @@ Keys stay on the server. Model output is validated before it changes a workspace
 | `GET /api/health` | Health check |
 | `GET /api/workspaces` | List workspaces |
 | `GET /api/workspaces/:id` | Load a workspace canvas |
+| `GET /api/workspaces/:id/history` | Load the most recent 50 prompt events for a workspace |
 | `POST /api/prompt` | `{ "workspaceId", "prompt" }` (JSON, max 4000 chars) → updated canvas |
 | `GET /api/tracker/:statement` | Tracker queries: `prompts`, `success-rate`, `workspaces`, `blocks`, `recent-activity`, `by-category`, `by-day`, `workspace-list` |
 

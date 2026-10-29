@@ -29,10 +29,10 @@ export function CanvasRenderer() {
   const mode = useCanvasSelector((s) => s.mode);
   const order = useCanvasSelector((s) => s.order, shallowArrayEqual);
   return (
-    <main data-canvas-mode={mode}>
+    <div data-canvas-mode={mode}>
       {order.map((id) => (
         <BlockHost key={id} id={id} />
       ))}
-    </main>
+    </div>
   );
 }

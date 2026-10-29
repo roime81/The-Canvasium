@@ -46,6 +46,8 @@ describe("prompt API (built-in templates)", () => {
 
     const stored = (await (await fetch(`${base}/api/workspaces/w1`)).json()) as { canvas: { order: string[] } };
     expect(stored.canvas.order).toEqual(body.canvas.order);
+    const history = (await (await fetch(`${base}/api/workspaces/w1/history`)).json()) as { history: { prompt: string; status: string }[] };
+    expect(history.history).toEqual([expect.objectContaining({ prompt: "Create a project tracker for a product launch", status: "applied" })]);
 
     expect((await tracker("prompts")).rows[0]).toEqual({ Prompts: 1 });
     expect((await tracker("success-rate")).rows[0]).toEqual({ "Success rate": "100%" });
@@ -75,6 +77,7 @@ describe("prompt API (built-in templates)", () => {
     expect((await post({ prompt: "ok" }, { "Content-Type": "text/plain" })).status).toBe(415);
     expect((await fetch(`${base}/api/prompt`)).status).toBe(405);
     expect((await fetch(`${base}/api/tracker/constructor`)).status).toBe(404);
+    expect((await fetch(`${base}/api/workspaces/%2e%2e%2fetc/history`)).status).toBe(400);
     expect((await fetch(`${base}/api/nope`)).status).toBe(404);
   });
 

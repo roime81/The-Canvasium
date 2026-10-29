@@ -2,12 +2,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { StaticConnector } from "../connectors/adapters";
 import { ConnectorRegistry } from "../connectors/types";
-import { createEmptyCanvas } from "../schema/canvas";
+import { createEmptyCanvas, type CanvasMode } from "../schema/canvas";
 import { CanvasStore } from "../state/store";
-import { CanvasProvider, useCanvasSelector } from "../ui/context";
+import { CanvasProvider, useCanvasEnv, useCanvasSelector } from "../ui/context";
 import { CanvasRenderer } from "../ui/CanvasRenderer";
 import { renderBasicMarkdown } from "../ui/markdown";
-import { listWorkspaces, loadWorkspace, sendPrompt } from "./promptClient";
+import { listWorkspaces, loadWorkspace, loadWorkspaceHistory, sendPrompt, type PromptHistoryItem } from "./promptClient";
 import "./style.css";
 
 const WORKSPACE_KEY = "canvasium.workspace";
@@ -23,25 +23,40 @@ const store = new CanvasStore(createEmptyCanvas("default", "dashboard"));
 const connectors = new ConnectorRegistry().register(new StaticConnector());
 const env = { store, connectors, apps: {}, renderMarkdown: renderBasicMarkdown };
 
-const examples = [
-  { title: "Plan my week", prompt: "Help me plan my week. Create a weekly planner with priorities, time blocks, and a short list of goals." },
-  { title: "Track a project", prompt: "Create a project tracker for a product launch with milestones, owners, status, and next actions." },
-  { title: "Organize meeting notes", prompt: "Create a meeting notes workspace with an agenda, decisions, action items, owners, and due dates." },
-  { title: "Build a habit tracker", prompt: "Build a simple habit tracker with a weekly view, daily checkboxes, and a reflection section." },
-  { title: "Research a topic", prompt: "Create a research brief for a topic I am exploring, with questions, sources, findings, and open items." },
-  { title: "Start from scratch", prompt: "Create a workspace for my current goal. Ask me a clarifying question if you need more detail." },
+type ConversationMessage = { role: "you" | "canvasium"; content: string };
+type DialogName = "history" | "how" | null;
+
+const canvasModes: { mode: CanvasMode; label: string }[] = [
+  { mode: "dashboard", label: "Dashboard" },
+  { mode: "document", label: "Document" },
+  { mode: "app", label: "App" },
 ];
 
-type ConversationMessage = { role: "you" | "canvasium"; content: string };
+function CanvasModePicker() {
+  const { store: canvasStore } = useCanvasEnv();
+  const mode = useCanvasSelector((state) => state.mode);
 
-function VersionBadge() {
-  const version = useCanvasSelector((state) => state.version);
-  return <span className="version-badge">v{version}</span>;
+  return (
+    <div className="mode-buttons" role="group" aria-label="Canvas mode">
+      {canvasModes.map(({ mode: nextMode, label }) => (
+        <button
+          className="mode-button"
+          key={nextMode}
+          type="button"
+          aria-pressed={mode === nextMode}
+          onClick={() => canvasStore.dispatch([{ op: "set_mode", mode: nextMode }])}
+        >
+          <span className={`mode-dot ${nextMode}`} aria-hidden="true" />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
-function EmptyHint() {
+function Greeting() {
   const empty = useCanvasSelector((state) => state.order.length === 0);
-  return empty ? <p className="empty-hint">Your workspace is empty. Describe a goal above or pick a starter to create your first blocks.</p> : null;
+  return empty ? <p className="greeting">Hi!</p> : null;
 }
 
 function Demo() {
@@ -52,33 +67,49 @@ function Demo() {
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [isError, setIsError] = useState(false);
-
-  const fail = (text: string) => {
-    setFeedback(text);
-    setIsError(true);
-  };
+  const [dialog, setDialog] = useState<DialogName>(null);
+  const [history, setHistory] = useState<PromptHistoryItem[]>([]);
+  const [historyError, setHistoryError] = useState("");
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     try {
       localStorage.setItem(WORKSPACE_KEY, workspaceId);
     } catch {
-      // storage may be unavailable (private mode); the workspace id then lasts for this session only
+      // The selected workspace lasts for this session when browser storage is unavailable.
     }
     loadWorkspace(workspaceId)
       .then((canvas) => !cancelled && store.replace(canvas))
       .catch((error: unknown) => {
         if (cancelled) return;
         store.replace(createEmptyCanvas(workspaceId, "dashboard"));
-        fail(`Could not load this workspace: ${error instanceof Error ? error.message : "server unreachable"}`);
+        setFeedback(`Could not load this workspace: ${error instanceof Error ? error.message : "server unreachable"}`);
+        setIsError(true);
       });
     listWorkspaces()
-      .then((list) => !cancelled && setKnown(list.map((w) => w.id)))
+      .then((list) => !cancelled && setKnown(list.map((workspace) => workspace.id)))
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
   }, [workspaceId]);
+
+  useEffect(() => {
+    if (dialog !== "history") return;
+    let cancelled = false;
+    setHistoryLoading(true);
+    setHistoryError("");
+    loadWorkspaceHistory(workspaceId)
+      .then((items) => !cancelled && setHistory(items))
+      .catch((error: unknown) => {
+        if (!cancelled) setHistoryError(error instanceof Error ? error.message : "Could not load history.");
+      })
+      .finally(() => !cancelled && setHistoryLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [dialog, workspaceId]);
 
   async function submitPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -86,19 +117,19 @@ function Demo() {
     if (!request || isLoading) return;
 
     setMessages((current) => [...current, { role: "you", content: request }]);
-    setFeedback("Thinking through your request…");
+    setFeedback("");
     setIsError(false);
     setIsLoading(true);
     try {
       const result = await sendPrompt(workspaceId, request);
       store.replace(result.canvas);
-      setFeedback(result.message);
       setMessages((current) => [...current, { role: "canvasium", content: result.message }]);
       setKnown((current) => (current.includes(workspaceId) ? current : [...current, workspaceId]));
       setPrompt("");
     } catch (error) {
       const reason = error instanceof Error ? error.message : "The server could not be reached.";
-      fail(reason);
+      setFeedback(reason);
+      setIsError(true);
       setMessages((current) => [...current, { role: "canvasium", content: "That didn't work, and your workspace was not changed." }]);
     } finally {
       setIsLoading(false);
@@ -108,7 +139,7 @@ function Demo() {
   function newWorkspace() {
     setWorkspaceId(`ws-${Date.now().toString(36)}`);
     setMessages([]);
-    setFeedback("Started a new workspace.");
+    setFeedback("");
     setIsError(false);
   }
 
@@ -116,100 +147,83 @@ function Demo() {
 
   return (
     <CanvasProvider env={env}>
-      <div className="app-shell">
-        <header className="topbar">
-          <a className="brand" href="/" aria-label="The Canvasium home">
-            <span className="brand-mark">C</span>
-            <span>The Canvasium</span>
-          </a>
-          <nav className="topbar-nav" aria-label="Pages">
-            <a className="active" href="/" aria-current="page">Workspace</a>
-            <a href="/tracker">Tracker</a>
-          </nav>
-        </header>
-
-        <div className="workspace">
-          <aside className="sidebar">
-            <div className="eyebrow">MAKE IT YOURS</div>
-            <h2>Start with a goal</h2>
-            <p className="sidebar-copy">Choose an idea or write a prompt for the work you want to get done.</p>
-
-            <div className="section-label">TRY A STARTER</div>
-            <nav className="starter-list" aria-label="Prompt examples">
-              {examples.map((example) => (
-                <button className="starter-button" key={example.title} onClick={() => setPrompt(example.prompt)}>
-                  <span>{example.title}</span><span className="starter-arrow" aria-hidden="true">↗</span>
-                </button>
-              ))}
-            </nav>
-
-            <label className="section-label mode-label" htmlFor="workspace-select">WORKSPACE</label>
-            <select id="workspace-select" className="workspace-select" value={workspaceId} onChange={(e) => { setWorkspaceId(e.target.value); setMessages([]); }}>
-              {options.map((id) => <option key={id} value={id}>{id}</option>)}
-            </select>
-            <button className="mode-button new-workspace" onClick={newWorkspace}>+ New workspace</button>
-
-            <a className="source-link" href="https://github.com/roime81/The-Canvasium" target="_blank" rel="noreferrer">
-              Explore the source <span aria-hidden="true">↗</span>
-            </a>
-          </aside>
-
-          <div className="main-column">
-            <section className="prompt-section">
-              <div className="eyebrow">YOUR PRODUCTIVITY, YOUR WAY</div>
-              <h1>What would you like to get done?</h1>
-              <p className="hero-copy">Describe a goal, a process, or a tool you wish you had. Canvasium will shape your workspace around it, and your progress shows up in the tracker.</p>
-
-              <form className="prompt-form" onSubmit={submitPrompt}>
-                <label className="visually-hidden" htmlFor="goal-prompt">Describe what you want to get done</label>
-                <textarea
-                  id="goal-prompt"
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  placeholder="For example: Help me organize a product launch, track the milestones, and keep my team focused on next steps."
-                  rows={3}
-                  maxLength={4000}
-                  disabled={isLoading}
-                />
-                <div className="prompt-controls">
-                  <span className="prompt-hint">Be specific or start broad. You can refine it as you go.</span>
-                  <button className="submit-button" type="submit" disabled={isLoading || !prompt.trim()}>
-                    {isLoading ? "Creating…" : "Create workspace"}
-                    <span aria-hidden="true">{isLoading ? "…" : "↗"}</span>
-                  </button>
-                </div>
-              </form>
-              {feedback && <p className={`feedback${isError ? " error" : ""}`} role="status">{feedback}</p>}
-            </section>
-
-            {messages.length > 0 && (
-              <section className="conversation" aria-label="Prompt history" aria-live="polite">
-                {messages.slice(-4).map((message, index) => (
-                  <article className={`message ${message.role}`} key={`${messages.length}-${index}`}>
-                    <span className="message-label">{message.role === "you" ? "YOU" : "CANVASIUM"}</span>
-                    <p>{message.content}</p>
-                  </article>
-                ))}
-              </section>
-            )}
-
-            <section className="canvas-section" aria-label="Your productivity workspace">
-              <div className="canvas-toolbar">
-                <div><span className="online-dot" /> Workspace <code>{workspaceId}</code></div>
-                <VersionBadge />
-              </div>
-              <div className="canvas-surface">
-                <CanvasRenderer />
-                <EmptyHint />
-              </div>
-              <footer className="canvas-footer">
-                <span>AI changes are validated before they reach your workspace.</span>
-                <span>Built with React + TypeScript</span>
-              </footer>
-            </section>
+      <main className="canvasium-page">
+        <section className="canvasium-panel" aria-label="The Canvasium">
+          <h1>The Canvasium</h1>
+          <div className="canvasium-conversation" aria-live="polite">
+            {messages.length === 0 && <Greeting />}
+            {messages.map((message, index) => (
+              <article className={`chat-message ${message.role}`} key={`${index}-${message.content}`}>
+                <span>{message.role === "you" ? "You" : "The Canvasium"}</span>
+                <p>{message.content}</p>
+              </article>
+            ))}
+            <div className="generated-canvas" aria-label="Your workspace">
+              <CanvasRenderer />
+            </div>
+            {isLoading && <p className="chat-status">Thinking…</p>}
+            {feedback && <p className={`chat-status${isError ? " error" : ""}`} role="status">{feedback}</p>}
           </div>
+          <form className="canvasium-prompt" onSubmit={submitPrompt}>
+            <label className="visually-hidden" htmlFor="goal-prompt">Ask The Canvasium</label>
+            <textarea
+              id="goal-prompt"
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              placeholder=" "
+              rows={1}
+              maxLength={4000}
+              disabled={isLoading}
+            />
+            <button type="submit" aria-label="Send prompt" disabled={isLoading || !prompt.trim()}>
+              <svg viewBox="0 0 28 36" aria-hidden="true"><path d="M2 2 26 18 2 34Z" /></svg>
+            </button>
+          </form>
+          <footer className="canvasium-links">
+            <button type="button" onClick={() => setDialog("history")}>My History</button>
+            <button type="button" onClick={() => setDialog("how")}>How It Works</button>
+          </footer>
+        </section>
+      </main>
+      {dialog && (
+        <div className="dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialog(null); }}>
+          <section className="canvasium-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+            <button className="dialog-close" type="button" aria-label="Close" onClick={() => setDialog(null)}>×</button>
+            {dialog === "history" ? (
+              <>
+                <h2 id="dialog-title">My History</h2>
+                <div className="history-controls">
+                  <label htmlFor="workspace-select">Workspace</label>
+                  <select id="workspace-select" value={workspaceId} onChange={(event) => { setWorkspaceId(event.target.value); setMessages([]); }}>
+                    {options.map((id) => <option key={id} value={id}>{id}</option>)}
+                  </select>
+                  <button type="button" onClick={newWorkspace}>New workspace</button>
+                </div>
+                {historyLoading && <p>Loading history…</p>}
+                {historyError && <p className="chat-status error" role="alert">{historyError}</p>}
+                {!historyLoading && !historyError && history.length === 0 && <p>No prompts in this workspace yet.</p>}
+                <ol className="history-list">
+                  {history.map((item) => (
+                    <li key={item.id}>
+                      <p>{item.prompt}</p>
+                      <small>{new Date(item.at).toLocaleString()} · {item.status}</small>
+                    </li>
+                  ))}
+                </ol>
+              </>
+            ) : (
+              <>
+                <h2 id="dialog-title">How It Works</h2>
+                <p>Tell The Canvasium what you want to plan, track, organize, or build. It creates a workspace and saves your prompts in My History.</p>
+                <p>Canvas mode changes how your workspace is arranged:</p>
+                <CanvasModePicker />
+                <p>Prompts use built-in templates unless an AI provider is configured.</p>
+                <a className="tracker-link" href="/tracker">Open productivity tracker</a>
+              </>
+            )}
+          </section>
         </div>
-      </div>
+      )}
     </CanvasProvider>
   );
 }
