@@ -2,9 +2,9 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { StaticConnector } from "../connectors/adapters";
 import { ConnectorRegistry } from "../connectors/types";
-import { createEmptyCanvas } from "../schema/canvas";
+import { createEmptyCanvas, type CanvasMode } from "../schema/canvas";
 import { CanvasStore } from "../state/store";
-import { CanvasProvider, useCanvasSelector } from "../ui/context";
+import { CanvasProvider, useCanvasEnv, useCanvasSelector } from "../ui/context";
 import { CanvasRenderer } from "../ui/CanvasRenderer";
 import { renderBasicMarkdown } from "../ui/markdown";
 import { listWorkspaces, loadWorkspace, sendPrompt } from "./promptClient";
@@ -42,6 +42,34 @@ function VersionBadge() {
 function EmptyHint() {
   const empty = useCanvasSelector((state) => state.order.length === 0);
   return empty ? <p className="empty-hint">Your workspace is empty. Describe a goal above or pick a starter to create your first blocks.</p> : null;
+}
+
+const canvasModes: { mode: CanvasMode; label: string }[] = [
+  { mode: "dashboard", label: "Dashboard" },
+  { mode: "document", label: "Document" },
+  { mode: "app", label: "App" },
+];
+
+function CanvasModePicker() {
+  const { store } = useCanvasEnv();
+  const mode = useCanvasSelector((state) => state.mode);
+
+  return (
+    <div className="mode-buttons" role="group" aria-label="Canvas mode">
+      {canvasModes.map(({ mode: nextMode, label }) => (
+        <button
+          className="mode-button"
+          key={nextMode}
+          type="button"
+          aria-pressed={mode === nextMode}
+          onClick={() => store.dispatch([{ op: "set_mode", mode: nextMode }])}
+        >
+          <span className={`mode-dot ${nextMode}`} aria-hidden="true" />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function Demo() {
@@ -142,6 +170,9 @@ function Demo() {
                 </button>
               ))}
             </nav>
+
+            <div className="section-label mode-label">CANVAS MODE</div>
+            <CanvasModePicker />
 
             <label className="section-label mode-label" htmlFor="workspace-select">WORKSPACE</label>
             <select id="workspace-select" className="workspace-select" value={workspaceId} onChange={(e) => { setWorkspaceId(e.target.value); setMessages([]); }}>

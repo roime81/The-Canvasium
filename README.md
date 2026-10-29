@@ -38,6 +38,7 @@ This example workspace is rendered with `CanvasRenderer` and demo connector data
 | **Productivity tracker** (backend UI) | `/tracker` | A Canvasium dashboard of everything done through the app: prompts, success rate, workspaces, blocks, activity by day and category, and recent activity. Auto-refreshes every 15 seconds. |
 
 One Node server (`server/`) serves both pages and a JSON API, records every prompt as a tracked event, and stores data in `data/canvasium.json`.
+Use the **Canvas mode** controls in the workspace sidebar to switch between Dashboard, Document, and App layouts.
 
 ## Run in GitHub Codespaces
 
