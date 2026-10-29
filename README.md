@@ -28,24 +28,35 @@ This example workspace is rendered with `CanvasRenderer` and demo connector data
 | `src/ui` | React context, renderer, block components, and connector-query hook |
 | `test` | Tests for validation, patching, atomicity, and rendering |
 
-## How to install
+## Run in GitHub Codespaces
 
-The Canvasium is currently a private source package and is not published to npm. Clone the repository and install its dependencies:
+Open the repository on GitHub, choose **Code → Codespaces → Create codespace**, and wait for setup to finish. The dev container installs dependencies and forwards port `5173`.
+
+```sh
+npm run dev
+```
+
+Open the forwarded **The Canvasium demo** port to explore the live canvas. The demo includes sample dashboard data, canvas mode controls, and an editor for applying validated AI operations.
+
+## Run locally
+
+The Canvasium is a source package and is not published to npm. Clone the repository and install its dependencies:
 
 ```sh
 git clone https://github.com/roime81/The-Canvasium.git
 cd The-Canvasium
-npm install
+npm ci
+npm run dev
 ```
 
-Verify the checkout with:
+Vite serves the demo at `http://localhost:5173`. To verify the checkout:
 
 ```sh
 npm run typecheck
 npm test
 ```
 
-There is no build or development-server script yet. To use Canvasium in an application, consume the TypeScript source from this repository or include it in your workspace; the app's toolchain must support React, TypeScript, and JSX. The public API is exported from `src/index.ts`.
+To use Canvasium in another application, consume the TypeScript source from this repository or include it in your workspace; the app's toolchain must support React, TypeScript, and JSX. The public API is exported from `src/index.ts`.
 
 ## How to use
 
