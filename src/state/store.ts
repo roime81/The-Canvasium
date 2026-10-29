@@ -1,5 +1,5 @@
 import type { CanvasOp } from "../schema/ai";
-import type { Block, CanvasState } from "../schema/canvas";
+import { CanvasStateSchema, type Block, type CanvasState } from "../schema/canvas";
 import { applyOps } from "./patch";
 
 type Listener = () => void;
@@ -25,6 +25,12 @@ export class CanvasStore {
     const next = applyOps(this.state, ops);
     if (next === this.state) return;
     this.state = next;
+    this.listeners.forEach((l) => l());
+  };
+
+  /** Replaces the whole state (e.g. with a server snapshot) after validating it. */
+  replace = (next: CanvasState): void => {
+    this.state = CanvasStateSchema.parse(next);
     this.listeners.forEach((l) => l());
   };
 
