@@ -54,13 +54,22 @@ Open **How It Works** and use its **Canvas mode** controls to switch the generat
 
 ## Run in GitHub Codespaces
 
-Choose **Code → Codespaces → Create codespace**. The dev container installs pnpm dependencies and forwards the Next.js workspace on port `3000` and API on port `3001`.
+Choose **Code → Codespaces → Create codespace**. The dev container installs the pinned pnpm version and frozen workspace lockfile, then forwards the Next.js workspace on port `3000` and API on port `3001`.
 
 ```sh
 pnpm dev
 ```
 
-Open the forwarded port for the new workspace. Run `pnpm legacy:dev` to open the existing prototype on port `5173` and its tracker at `/tracker`.
+Open the forwarded **The Canvasium workspace** port. Keep `pnpm dev` running in that terminal. In a second terminal, verify the live app and API proxy:
+
+```sh
+pnpm codespaces:smoke
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+The smoke check sends a deterministic offline prompt, so it does not need an API key or call an external model. Attach a CSV/Parquet file in the browser to test local DuckDB schema inspection. Run `pnpm legacy:dev` to open the existing prototype on port `5173` and its tracker at `/tracker`.
 
 ## Connect an AI provider (optional)
 

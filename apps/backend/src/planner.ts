@@ -87,12 +87,12 @@ export function createStarterPlan({ prompt, sources }: PlanRequest): CanvasPlan 
   };
 }
 
-export async function createPlan(request: PlanRequest): Promise<{
+export async function createPlan(request: PlanRequest, options: { offline?: boolean } = {}): Promise<{
   plan: CanvasPlan;
   generatedBy: "starter-planner" | "ai-sdk";
 }> {
   const apiKey = process.env.AI_API_KEY;
-  if (!apiKey) {
+  if (!apiKey || options.offline) {
     return { plan: createStarterPlan(request), generatedBy: "starter-planner" };
   }
 
