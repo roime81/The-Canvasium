@@ -2,7 +2,7 @@
 
 The Canvasium is a natural-language productivity canvas. The repository now includes a Turborepo + pnpm monorepo foundation for an AI-native Next.js workspace, a Fastify API, and shared Zod schemas. The earlier Vite/React prototype remains available through `legacy:*` scripts while the new app is scaffolded.
 
-## Preview
+## Canvas renderer preview
 
 The Next.js workspace after a dashboard prompt, with an editable canvas, chart preview, and floating command bar:
 

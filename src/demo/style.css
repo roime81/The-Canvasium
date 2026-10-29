@@ -170,7 +170,7 @@ body { background: #fff; }
 .generated-canvas [data-canvas-mode] { display: grid; gap: 12px; margin-top: 12px; }
 .generated-canvas [data-canvas-mode="document"] { max-width: 760px; margin-inline: auto; grid-template-columns: minmax(0, 1fr); }
 .generated-canvas [data-canvas-mode="dashboard"] { grid-template-columns: repeat(12, minmax(0, 1fr)); align-content: start; }
-.generated-canvas [data-canvas-mode="dashboard"] > section[data-block] { grid-column: 1 / -1; }
+.generated-canvas [data-canvas-mode="dashboard"] > section[data-block] { grid-column: span 6; }
 .generated-canvas [data-canvas-mode="dashboard"] > div[data-block] { grid-column: 1 / -1; }
 .generated-canvas [data-canvas-mode="app"] { min-height: 180px; align-content: start; padding: 14px; border: 1px solid #b7c3c8; }
 .generated-canvas [data-block] { margin-bottom: 10px; }
@@ -212,4 +212,5 @@ body { background: #fff; }
   .canvasium-page { padding: 16px; }
   .canvasium-panel { min-height: min(547px, calc(100vh - 32px)); }
   .canvasium-conversation { min-height: 0; flex: 1; max-height: none; }
+  .generated-canvas [data-canvas-mode="dashboard"] > section[data-block] { grid-column: 1 / -1; }
 }
