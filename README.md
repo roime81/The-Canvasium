@@ -30,13 +30,52 @@ This example workspace is rendered with `CanvasRenderer` and demo connector data
 
 ## Run in GitHub Codespaces
 
-Open the repository on GitHub, choose **Code → Codespaces → Create codespace**, and wait for setup to finish. The dev container installs dependencies and forwards port `5173`.
+Open the repository on GitHub, choose **Code → Codespaces → Create codespace**, and wait for setup to finish. The dev container installs dependencies and forwards port `5173`. Copy `.env.example` to `.env`, then set `VITE_CANVASIUM_AI_ENDPOINT` to your server-side prompt endpoint before starting the demo:
 
 ```sh
+cp .env.example .env
+# Set VITE_CANVASIUM_AI_ENDPOINT in .env to your backend URL
 npm run dev
 ```
 
-Open the forwarded **The Canvasium demo** port to explore the live canvas. The demo includes sample dashboard data, canvas mode controls, and an editor for applying validated AI operations.
+Open the forwarded **The Canvasium demo** port to explore the live canvas. You can describe a goal in your own words or start from examples for planning, project tracking, meeting notes, habits, and research. Generated changes are schema-validated and applied atomically.
+
+## Connect a prompt backend
+
+The demo sends a `POST` request to the configured `VITE_CANVASIUM_AI_ENDPOINT`. The JSON request body contains the user's prompt and the current canvas state:
+
+```json
+{
+  "prompt": "Make a project tracker for a product launch",
+  "canvas": {
+    "id": "canvasium-demo",
+    "mode": "dashboard",
+    "version": 1,
+    "order": [],
+    "blocks": {}
+  }
+}
+```
+
+Return a JSON object matching the `AIResponse` schema, with an `ops` array and optional `message` or `intent` fields. For example:
+
+```json
+{
+  "message": "I created a launch tracker with milestones and next actions.",
+  "ops": [
+    {
+      "op": "add_block",
+      "block": {
+        "id": "launch-plan",
+        "type": "text",
+        "content": "## Product launch\\n\\n- Define milestones\\n- Assign owners\\n- Review next actions"
+      }
+    }
+  ]
+}
+```
+
+Implement the endpoint in your server and connect it to any model/provider you choose. Keep provider API keys and authentication on the server; do not put secrets in `VITE_` variables because those are included in browser code. The backend should instruct its model to return Canvasium operations (see `src/schema/ai.ts`) and return them as JSON. Canvasium validates the response before changing the workspace. The repository does not include an AI provider or backend.
 
 ## Run locally
 
@@ -49,7 +88,7 @@ npm ci
 npm run dev
 ```
 
-Vite serves the demo at `http://localhost:5173`. To verify the checkout:
+Set `VITE_CANVASIUM_AI_ENDPOINT` in `.env` to enable natural-language prompting. Vite serves the demo at `http://localhost:5173`. To verify the checkout:
 
 ```sh
 npm run typecheck
