@@ -1,14 +1,26 @@
 # The Canvasium
 
-The Canvasium is a typed, React-based canvas for composing AI-generated workspaces from text, dashboards, and custom app blocks. It validates proposed changes before applying them, connects widgets to pluggable data sources, and updates only the parts of the canvas that changed.
+The Canvasium is a natural-language productivity canvas. The repository now includes a Turborepo + pnpm monorepo foundation for an AI-native Next.js workspace, a Fastify API, and shared Zod schemas. The earlier Vite/React prototype remains available through `legacy:*` scripts while the new app is scaffolded.
 
 ## Preview
 
-The prompt panel after asking it to "Plan my week". The generated workspace is rendered with `CanvasRenderer` inside the conversation:
+The Next.js workspace after a dashboard prompt, with an editable canvas, chart preview, and floating command bar:
 
-![The Canvasium chat panel showing a generated weekly plan, a prompt box, and My History and How It Works links](docs/canvasium-preview.png)
+![The Canvasium workspace showing a dashboard chart preview and floating prompt bar](docs/canvasium-preview.png)
 
-## What it includes
+## Monorepo foundation
+
+| Path | Purpose |
+| --- | --- |
+| `apps/web` | Next.js App Router UI, Tailwind, Zustand canvas state, Tiptap text blocks, and React Grid Layout |
+| `apps/backend` | Fastify API with a validated starter planner endpoint |
+| `packages/types` | Shared Zod schemas and TypeScript types for canvas state, content blocks, data sources, and plans |
+
+The starter UI reacts to prompts with document, dashboard, or visual-workspace blocks. It includes editable Tiptap text, draggable/resizable layout blocks, and in-browser DuckDB schema inspection for CSV/Parquet files (PDFs retain metadata only). Fastify uses a deterministic planner by default; setting `AI_API_KEY` enables Vercel AI SDK structured planning through OpenAI with source schemas as context. File contents remain in the browser; live chart queries, PDF extraction, image generation, and SharePoint/Datalake connectors remain follow-up work.
+
+The typed Vite canvas library and tracker described below remain available as a working prototype.
+
+## Prototype capabilities
 
 - **Typed canvas state:** Zod schemas define the normalized canvas, block types, widgets, modes, and data queries.
 - **Atomic updates:** A batch of canvas operations either applies in full or leaves the existing state untouched. Untouched blocks retain their object identity.
@@ -17,7 +29,7 @@ The prompt panel after asking it to "Plan my week". The generated workspace is r
 - **Pluggable data connectors:** A small connector interface supports injected DuckDB executors, Microsoft Graph, vector search, or your own data source.
 - **Custom app blocks:** Register React components by `appId` and render them as canvas blocks.
 
-## Project layout
+## Prototype project layout
 
 | Path | Purpose |
 | --- | --- |
@@ -30,29 +42,31 @@ The prompt panel after asking it to "Plan my week". The generated workspace is r
 | `src/demo`, `src/tracker` | Prompt workspace and tracker UIs |
 | `test` | Tests for validation, patching, atomicity, and rendering |
 
-## Two capabilities
+## Prototype surfaces
 
 | Surface | URL | What it does |
 | --- | --- | --- |
 | **Prompt workspace** (frontend) | `/` | A chat-style prompt panel for any productivity goal. Send a prompt with the arrow button; the conversation and generated workspace appear above it. **My History** shows saved prompts for the selected workspace. **How It Works** explains the app and includes canvas mode controls. |
 | **Productivity tracker** (backend UI) | `/tracker` | A Canvasium dashboard of everything done through the app: prompts, success rate, workspaces, blocks, activity by day and category, and recent activity. Auto-refreshes every 15 seconds. |
 
-One Node server (`server/`) serves both pages and a JSON API, records every prompt as a tracked event, and stores data in `data/canvasium.json`.
+The prototype's Node server (`server/`) serves both pages and a JSON API, records every prompt as a tracked event, and stores data in `data/canvasium.json`.
 Open **How It Works** and use its **Canvas mode** controls to switch the generated workspace between Dashboard, Document, and App layouts. Modes affect the presentation of blocks; they do not erase workspace content.
 
 ## Run in GitHub Codespaces
 
-Choose **Code → Codespaces → Create codespace**. The dev container installs dependencies and forwards port `5173`.
+Choose **Code → Codespaces → Create codespace**. The dev container installs pnpm dependencies and forwards the Next.js workspace on port `3000` and API on port `3001`.
 
 ```sh
-npm run dev
+pnpm dev
 ```
 
-Open the forwarded port for the prompt workspace, and add `/tracker` for the tracker. With no AI configured, prompts use built-in offline templates.
+Open the forwarded port for the new workspace. Run `pnpm legacy:dev` to open the existing prototype on port `5173` and its tracker at `/tracker`.
 
 ## Connect an AI provider (optional)
 
-Any OpenAI-compatible chat-completions endpoint works. Copy `.env.example` to `.env`:
+For the new Fastify planner, copy `.env.example` to `.env` and set `AI_API_KEY` (OpenAI) and optionally `AI_MODEL`. The Fastify planner loads this root `.env`; without a key, it uses deterministic starter plans.
+
+The legacy Vite prototype can also use any OpenAI-compatible chat-completions endpoint through `AI_API_URL`, `AI_API_KEY`, and `AI_MODEL`:
 
 ```sh
 AI_API_URL=https://api.openai.com/v1/chat/completions
@@ -62,7 +76,7 @@ AI_MODEL=gpt-4o-mini
 
 Keys stay on the server. Model output is validated before it changes a workspace; invalid output is rejected (422), provider failures return 502, and both are tracked. Other settings: `PORT` (5173), `HOST` (127.0.0.1), `DATA_FILE` (`data/canvasium.json`).
 
-## API
+## Legacy prototype API
 
 | Endpoint | Purpose |
 | --- | --- |
@@ -75,19 +89,22 @@ Keys stay on the server. Model output is validated before it changes a workspace
 
 **Security:** there is no authentication, and the server binds to `127.0.0.1` by default. Don't expose it publicly without adding auth.
 
+The new Fastify service exposes `GET /health` and `POST /api/plan`. The Next.js app proxies `/api/*` to Fastify on port `3001`. This API is unauthenticated; keep forwarded Codespaces ports private and add authentication before public deployment.
+
 ## Run locally
 
 ```sh
 git clone https://github.com/roime81/The-Canvasium.git
 cd The-Canvasium
-npm ci
-npm run dev      # dev server with HMR on http://localhost:5173
-npm start        # build, then serve production bundle
-npm run typecheck
-npm test
+pnpm install
+pnpm dev                 # Next.js on :3000 and Fastify on :3001
+pnpm build
+pnpm typecheck
+pnpm test                # Existing Vite prototype tests
+pnpm legacy:dev          # Existing Vite prototype on :5173
 ```
 
-To use Canvasium in another application, consume the TypeScript source from this repository; the toolchain must support React, TypeScript, and JSX. The public API is exported from `src/index.ts` and includes `StaticConnector`, `HttpConnector`, `renderBasicMarkdown`, and `CanvasStore.replace`.
+The legacy Canvasium library public API is exported from `src/index.ts` and includes `StaticConnector`, `HttpConnector`, `renderBasicMarkdown`, and `CanvasStore.replace`.
 
 ## How to use
 

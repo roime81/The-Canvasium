@@ -1,0 +1,30 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "AI_API_KEY",
+    "AI_MODEL",
+    "BACKEND_HOST",
+    "BACKEND_PORT",
+    "BACKEND_URL"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "test": {
+      "dependsOn": ["^test"]
+    }
+  }
+}
