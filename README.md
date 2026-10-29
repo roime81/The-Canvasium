@@ -4,9 +4,9 @@ The Canvasium is a natural-language productivity canvas. The repository now incl
 
 ## Canvas renderer preview
 
-The Next.js workspace after a visual prompt, with a rendered local preview and floating command bar:
+The clean Next.js workspace after a dashboard prompt, with a chart and floating command bar:
 
-![The Canvasium workspace showing a generated visual preview and floating prompt bar](docs/canvasium-preview.png)
+![The Canvasium workspace showing a clean dashboard and floating prompt bar](docs/canvasium-preview.png)
 
 ## Monorepo foundation
 
