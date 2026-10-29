@@ -1,6 +1,7 @@
 import * as duckdb from "@duckdb/duckdb-wasm";
 
 let databasePromise: Promise<duckdb.AsyncDuckDB> | undefined;
+const registeredSources = new Map<string, { fileName: string; reader: "read_csv_auto" | "read_parquet" }>();
 
 async function getDatabase(): Promise<duckdb.AsyncDuckDB> {
   if (!databasePromise) {
@@ -36,11 +37,25 @@ export async function inspectTabularFile(
   try {
     await database.registerFileBuffer(registeredName, new Uint8Array(await file.arrayBuffer()));
     const reader = extension === "parquet" ? "read_parquet" : "read_csv_auto";
+    registeredSources.set(sourceId, { fileName: registeredName, reader });
     const table = await connection.query(`DESCRIBE SELECT * FROM ${reader}('${registeredName}')`);
     return table.toArray().map((row) => {
       const value = row.toJSON() as { column_name?: unknown; column_type?: unknown };
       return { name: String(value.column_name ?? ""), type: String(value.column_type ?? "") };
     });
+  } finally {
+    await connection.close();
+  }
+}
+
+export async function getChartRows(sourceId: string): Promise<Array<Record<string, unknown>>> {
+  const source = registeredSources.get(sourceId);
+  if (!source) throw new Error("Reattach this local file to render its chart.");
+  const database = await getDatabase();
+  const connection = await database.connect();
+  try {
+    const table = await connection.query(`SELECT * FROM ${source.reader}('${source.fileName}') LIMIT 12`);
+    return table.toArray().map((row) => row.toJSON() as Record<string, unknown>);
   } finally {
     await connection.close();
   }

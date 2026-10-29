@@ -15,6 +15,7 @@
     "@auth/prisma-adapter": "^2.10.0",
     "@canvasium/types": "workspace:*",
     "@prisma/client": "^6.7.0",
+    "@sentry/nextjs": "^10.22.0",
     "@duckdb/duckdb-wasm": "^1.32.0",
     "@tiptap/react": "^3.32.1",
     "@tiptap/starter-kit": "^3.32.1",

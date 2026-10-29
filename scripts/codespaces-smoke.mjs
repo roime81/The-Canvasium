@@ -47,7 +47,10 @@ console.log("Prompt API and Next.js proxy passed (offline dashboard plan).");
 
 const invalid = await fetch(`${webUrl}/api/plan`, {
   method: "POST",
-  headers: { "content-type": "application/json" },
+  headers: {
+    "content-type": "application/json",
+    "x-canvasium-offline": "true",
+  },
   body: JSON.stringify({ prompt: "" }),
   signal: AbortSignal.timeout(10_000),
 });

@@ -4,9 +4,9 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import GridLayout, { type Layout } from "react-grid-layout";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { CanvasPlanSchema, type CanvasBlock, type CanvasPlan, type DataSource } from "@canvasium/types";
+import { CanvasPlanSchema, CanvasStateSchema, type CanvasBlock, type CanvasPlan, type DataSource } from "@canvasium/types";
 import { useCanvasStore } from "@/store/canvas-store";
-import { inspectTabularFile } from "@/lib/local-data";
+import { getChartRows, inspectTabularFile } from "@/lib/local-data";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -61,17 +61,10 @@ function CanvasBlockView({ block }: { block: CanvasBlock }) {
       <article className="canvas-card">
         <span className="card-kicker">{block.widgetType.replace("_", " ").toUpperCase()}</span>
         <h2>{block.title}</h2>
-        <div className="chart-placeholder" role="img" aria-label={`${block.title} chart placeholder`}>
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
+        <LocalChart sourceId={block.dataSourceId} title={block.title} />
         <p>
           {source
-            ? `Source: ${source.name}. Live query rendering is not wired yet.`
+            ? `Source: ${source.name}. Queried locally in your browser.`
             : "Connect a data source to populate this visualization."}
         </p>
       </article>
@@ -91,6 +84,45 @@ function CanvasBlockView({ block }: { block: CanvasBlock }) {
           ))}
         </div>}
     </article>
+  );
+}
+
+function LocalChart({ sourceId, title }: { sourceId: string; title: string }) {
+  const [rows, setRows] = useState<Array<Record<string, unknown>>>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    getChartRows(sourceId)
+      .then((result) => {
+        if (active) {
+          setRows(result);
+          setError("");
+        }
+      })
+      .catch((reason: unknown) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Could not query local data.");
+      });
+    return () => { active = false; };
+  }, [sourceId]);
+
+  if (error) return <div className="chart-message">{error}</div>;
+  if (rows.length === 0) return <div className="chart-message">Loading local data…</div>;
+  const firstRow = rows[0] ?? {};
+  const numericColumn = Object.keys(firstRow).find((key) => Number.isFinite(Number(firstRow[key])));
+  const labelColumn = Object.keys(firstRow).find((key) => key !== numericColumn) ?? numericColumn;
+  if (!numericColumn || !labelColumn) return <div className="chart-message">This source has no chartable columns.</div>;
+  const values = rows.map((row) => Math.max(0, Number(row[numericColumn]) || 0));
+  const maximum = Math.max(...values, 1);
+  return (
+    <div className="local-chart" role="img" aria-label={`${title} using ${numericColumn}`}>
+      {rows.map((row, index) => (
+        <div className="local-chart-bar" key={`${String(row[labelColumn])}-${index}`}>
+          <span style={{ height: `${Math.max(4, (values[index] / maximum) * 100)}%` }} />
+          <small>{String(row[labelColumn])}</small>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -195,12 +227,44 @@ function PromptBar() {
 }
 
 export function CanvasWorkspace() {
+  const canvas = useCanvasStore((state) => state.canvas);
+  const setCanvas = useCanvasStore((state) => state.setCanvas);
   const title = useCanvasStore((state) => state.canvas.title);
   const blocks = useCanvasStore((state) => state.canvas.blocks);
   const mode = useCanvasStore((state) => state.canvas.activeLayoutMode);
   const updateLayout = useCanvasStore((state) => state.updateLayout);
   const canvasRef = useRef<HTMLElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(1120);
+  const [canvasLoaded, setCanvasLoaded] = useState(false);
+  const [persistenceError, setPersistenceError] = useState("");
+  useEffect(() => {
+    fetch("/api/canvas")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load your saved canvas.");
+        return response.json();
+      })
+      .then((savedCanvas: unknown) => {
+        const parsed = CanvasStateSchema.safeParse(savedCanvas);
+        if (!parsed.success) throw new Error("Your saved canvas is invalid.");
+        setCanvas(parsed.data);
+        setCanvasLoaded(true);
+      })
+      .catch((reason: unknown) => setPersistenceError(reason instanceof Error ? reason.message : "Could not load your saved canvas."));
+  }, [setCanvas]);
+  useEffect(() => {
+    if (!canvasLoaded) return;
+    const timer = window.setTimeout(() => {
+      fetch("/api/canvas", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(canvas),
+      }).then((response) => {
+        if (!response.ok) setPersistenceError("Could not save your canvas.");
+        else setPersistenceError("");
+      }).catch(() => setPersistenceError("Could not save your canvas."));
+    }, 750);
+    return () => window.clearTimeout(timer);
+  }, [canvas, canvasLoaded]);
   useEffect(() => {
     const element = canvasRef.current;
     if (!element) return;
@@ -236,6 +300,7 @@ export function CanvasWorkspace() {
 
   return (
     <main className="workspace">
+      {persistenceError && <p className="persistence-error" role="alert">{persistenceError}</p>}
       <section ref={canvasRef} className={`canvas canvas-${mode}`} aria-label={title}>
         {blocks.length === 0 ? (
           <div className="empty-state">
