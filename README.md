@@ -109,6 +109,14 @@ pnpm db:migrate
 
 In Google Cloud, add `http://localhost:3000/api/auth/callback/google` and the production equivalent as authorized redirect URIs. Set `ADMIN_EMAILS` to a comma-separated allowlist; only those accounts can open `/admin` to enable or disable the planner and select its OpenAI model. API keys stay in server secrets. Set the same non-empty `INTERNAL_API_SECRET` for Next.js and Fastify in production so only the authenticated Next.js proxy can call the planner.
 
+## MVP production checklist
+
+After Google sign-in and PostgreSQL are configured, Canvasium persists one private canvas per user and records prompt outcomes for rate limiting and audit history. The planner permits 20 authenticated requests per minute per user. Local CSV/Parquet dashboards query the attached file with DuckDB-Wasm and render their first numeric series in the browser; files are never uploaded to the server and must be reattached after a page reload.
+
+Set `AI_API_KEY` to enable structured OpenAI planning and OpenAI Images (`OPENAI_IMAGE_MODEL` defaults to `gpt-image-1`) for visual requests. Without a key, Canvasium uses deterministic document, dashboard, and local SVG visual plans. Failed image-provider requests are returned as errors rather than silently claiming an image was generated.
+
+Set `SENTRY_DSN` for server errors and `NEXT_PUBLIC_SENTRY_DSN` for browser errors. Before deployment, set `AUTH_TRUST_HOST=true`, a strong `AUTH_SECRET`, and `INTERNAL_API_SECRET`; configure all values as deployment secrets. Run `pnpm db:migrate` during release, keep Fastify private behind the Next.js app, and use the provided health endpoint for hosting checks.
+
 The legacy Vite prototype can also use any OpenAI-compatible chat-completions endpoint through `AI_API_URL`, `AI_API_KEY`, and `AI_MODEL`:
 
 ```sh

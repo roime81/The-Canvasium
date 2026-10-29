@@ -50,6 +50,47 @@ function withVisualPreviews(plan: CanvasPlan, prompt: string): CanvasPlan {
   };
 }
 
+async function generateImageAsset(prompt: string, apiKey: string) {
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1",
+      prompt,
+      size: "1024x1024",
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`OpenAI image generation failed (${response.status}).`);
+  }
+  const payload = await response.json() as { data?: Array<{ b64_json?: string }> };
+  const image = payload.data?.[0]?.b64_json;
+  if (!image) throw new Error("OpenAI image generation returned no image.");
+  return {
+    url: `data:image/png;base64,${image}`,
+    promptPrompted: prompt,
+    alt: `Generated image for ${prompt}`,
+  };
+}
+
+async function withGeneratedImages(plan: CanvasPlan, prompt: string, apiKey: string): Promise<CanvasPlan> {
+  if (plan.activeLayoutMode !== "visual_workspace") return plan;
+  const hasVisualBlock = plan.blocks.some((block) => block.type === "image" || block.type === "gallery");
+  if (!hasVisualBlock) return plan;
+  const asset = await generateImageAsset(prompt, apiKey);
+  return {
+    ...plan,
+    blocks: plan.blocks.map((block) =>
+      (block.type === "image" || block.type === "gallery") && block.assets.length === 0
+        ? { ...block, assets: [asset] }
+        : block,
+    ),
+  };
+}
+
 export function createStarterPlan({ prompt, sources }: PlanRequest): CanvasPlan {
   const normalized = prompt.toLowerCase();
   const sourceId = sources.find((source) =>
@@ -140,5 +181,8 @@ export async function createPlan(request: PlanRequest, options: { offline?: bool
     prompt: `${request.prompt}\n\nConnected source metadata and schemas (no file contents): ${JSON.stringify(request.sources)}`,
   });
 
-  return { plan: withVisualPreviews(object, request.prompt), generatedBy: "ai-sdk" };
+  return {
+    plan: await withGeneratedImages(object, request.prompt, apiKey),
+    generatedBy: "ai-sdk",
+  };
 }

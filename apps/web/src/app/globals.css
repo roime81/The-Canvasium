@@ -50,6 +50,11 @@ button, textarea { font: inherit; }
 .chart-placeholder span:nth-child(4) { height: 82%; }
 .chart-placeholder span:nth-child(5) { height: 72%; }
 .chart-placeholder span:nth-child(6) { height: 100%; }
+.local-chart { display: flex; height: 150px; align-items: end; gap: 9px; padding: 12px 8px 0; border-bottom: 1px solid var(--line); }
+.local-chart-bar { display: grid; flex: 1; height: 100%; align-items: end; gap: 6px; min-width: 0; }
+.local-chart-bar span { min-height: 4px; background: #6c8065; border-radius: 4px 4px 0 0; }
+.local-chart-bar small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.chart-message { display: grid; height: 150px; place-items: center; color: var(--muted); font-size: 13px; text-align: center; }
 .visual-placeholder { display: grid; min-height: 180px; place-items: center; margin: 16px 0; border-radius: 8px; background: #f5f6f2; color: var(--muted); }
 .visual-assets { margin-top: 16px; }
 .visual-assets figure { margin: 0; }
@@ -67,6 +72,7 @@ button, textarea { font: inherit; }
 .attach-button input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 .command-hint { margin: 8px 0 0; color: var(--muted); font-size: 11px; text-align: center; }
 .error-message { margin: 0 0 8px; color: #a32626; font-size: 13px; text-align: center; }
+.persistence-error { position: fixed; z-index: 30; top: 16px; right: 16px; left: 16px; margin: 0 auto; color: #a32626; font-size: 13px; text-align: center; }
 .login-page, .admin-page { min-height: 100vh; padding: 10vh 6vw; }
 .login-card, .settings-card { width: min(100%, 520px); margin: 0 auto; padding: 32px; border: 1px solid var(--line); border-radius: 16px; }
 .login-card h1, .admin-page h1 { margin: 14px 0; font-size: clamp(36px, 5vw, 56px); font-weight: 500; letter-spacing: -.05em; line-height: 1; }
