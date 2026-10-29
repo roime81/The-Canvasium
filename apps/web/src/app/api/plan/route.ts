@@ -8,7 +8,8 @@ const backendUrl = process.env.BACKEND_URL ?? "http://127.0.0.1:3001";
 export async function POST(request: Request) {
   const session = await auth();
   const offline = request.headers.get("x-canvasium-offline") === "true";
-  if (!session?.user && !(offline && process.env.NODE_ENV !== "production")) {
+  const isDesktop = process.env.CANVASIUM_DESKTOP === "1";
+  if (!session?.user && !isDesktop && !(offline && process.env.NODE_ENV !== "production")) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   }
   const body = await request.text();
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
   try {
     settings = await prisma.appSetting.findUnique({ where: { id: 1 } });
   } catch {
-    if (offline && process.env.NODE_ENV !== "production") {
+    if (isDesktop || (offline && process.env.NODE_ENV !== "production")) {
       settings = null;
     } else {
       return NextResponse.json({ error: "Settings database is unavailable." }, { status: 503 });

@@ -1,0 +1,51 @@
+{
+  "name": "@canvasium/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "dist:win": "electron-builder --win nsis zip",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^37.6.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.canvasium.desktop",
+    "productName": "The Canvasium",
+    "directories": {
+      "output": "../../dist/desktop/release"
+    },
+    "files": [
+      "main.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../dist/desktop/web",
+        "to": "web"
+      },
+      {
+        "from": "../../dist/desktop/backend",
+        "to": "backend"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    }
+  }
+}
