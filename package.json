@@ -3,12 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
-    "dev": "tsx server/index.ts --dev",
-    "build": "vite build",
-    "start": "vite build && tsx server/index.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "typecheck": "pnpm legacy:typecheck && turbo run typecheck",
+    "test": "pnpm legacy:test && turbo run test",
+    "legacy:dev": "tsx server/index.ts --dev",
+    "legacy:build": "vite build",
+    "legacy:start": "vite build && tsx server/index.ts",
+    "legacy:typecheck": "tsc --noEmit",
+    "legacy:test": "vitest run"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -22,6 +31,7 @@
     "tsx": "^4.23.15",
     "typescript": "^5.5.4",
     "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "turbo": "^2.5.6"
   }
 }
