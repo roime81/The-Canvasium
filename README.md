@@ -178,4 +178,20 @@ npm test
 
 ### Run and test on GitHub
 
-The `CI` workflow (`.github/workflows/ci.yml`) runs `npm ci`, `npm run typecheck`, and `npm test` on every push and pull request. To run it manually, open the repository's **Actions** tab, select **CI**, and choose **Run workflow**. You can also run the same commands in a GitHub Codespace on this repository.
+#### GitHub Codespaces
+
+The repository includes a Codespaces development container in `.devcontainer/devcontainer.json`. It uses Node.js 20 and runs `npm ci` when the environment is created.
+
+1. Open the repository on GitHub and select **Code** > **Codespaces** > **Create codespace on docs/complete-readme-preview** (or choose your branch).
+2. In the Codespace terminal, run the checks:
+
+   ```sh
+   npm run typecheck
+   npm test
+   ```
+
+There is no development-server script because this repository is a library, not a standalone web app.
+
+#### GitHub Actions
+
+The `CI` workflow (`.github/workflows/ci.yml`) runs `npm ci`, `npm run typecheck`, and `npm test` on every push and pull request. To run it manually, open the repository's **Actions** tab, select **CI**, and choose **Run workflow**.
