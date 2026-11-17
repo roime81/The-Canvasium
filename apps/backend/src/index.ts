@@ -45,7 +45,7 @@ const handlePlan = async (request: any, reply: any) => {
     if (provider && !["ollama", "openai", "openai-compatible"].includes(provider)) {
       return reply.code(400).send({ error: "Unsupported AI provider selection." });
     }
-    if (model !== undefined && (!model || model.length > 128 || /[\\r\\n\\0]/.test(model))) {
+    if (model !== undefined && (!model || model.length > 128 || (model.split("").some((character) => character.charCodeAt(0) < 32)))) {
       return reply.code(400).send({ error: "Invalid AI model selection." });
     }
     return await createPlan(parsed.data, { offline, provider, model });
