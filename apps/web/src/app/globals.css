@@ -178,6 +178,8 @@ button, textarea { font: inherit; }
   background: #fafbf9;
   color: var(--ink);
   font-size: 11px;
+  border: 1px solid #e8e9e5;
+  border-radius: 10px;
 }
 .command-bar > .model-trigger:hover,
 .command-bar > .model-trigger[aria-expanded="true"] {
