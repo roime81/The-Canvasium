@@ -5,6 +5,9 @@ All notable changes to The Canvasium are documented in this file.
 ## [0.2.0] - 2026-11-17
 
 ### Added
+- Added a hierarchical provider/model selector to the floating prompt bar, with drill-down into a provider's model list and a back navigation action.
+- Added runtime model discovery for installed Ollama models and a non-secret `GET /api/v1/models` catalogue endpoint.
+- Added optional concurrent OpenAI and OpenAI-compatible provider configuration so users can switch between local and commercial model families without exposing credentials to the browser.
 - Added a provider abstraction for AI inference, keeping model selection independent of the Canvasium planner.
 - Made Ollama the default local LLM runtime, using its OpenAI-compatible chat API.
 - Added configurable local model selection through `AI_MODEL` and `OLLAMA_BASE_URL`.
@@ -24,6 +27,7 @@ All notable changes to The Canvasium are documented in this file.
 
 ### Security
 - Provider and MCP credentials remain server-side.
+- The browser sends only the selected provider ID and model ID; provider credentials remain server-side.
 - Model output continues to be validated against the shared Canvasium plan schema.
 - MCP should remain on a private network unless TLS, authentication, rate limiting, and audit controls are configured.
 
