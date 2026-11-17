@@ -45,8 +45,9 @@ function compatibleKey() {
 }
 
 function openAIBaseUrl() {
+  const legacyBaseUrl = process.env.AI_API_URL?.replace(/\/chat\/completions\/?$/, "");
   return process.env.OPENAI_API_URL
-    || (activeProvider() === "openai" ? process.env.AI_API_URL || "https://api.openai.com/v1" : "https://api.openai.com/v1");
+    || (activeProvider() === "openai" ? legacyBaseUrl || "https://api.openai.com/v1" : "https://api.openai.com/v1");
 }
 
 function compatibleUrl() {
