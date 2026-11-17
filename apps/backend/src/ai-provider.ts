@@ -36,22 +36,22 @@ async function installedOllamaModels(): Promise<string[]> {
 
 function openAIKey() {
   return process.env.OPENAI_API_KEY
-    ?? (activeProvider() === "openai" ? process.env.AI_API_KEY : undefined);
+    || (activeProvider() === "openai" ? process.env.AI_API_KEY : undefined);
 }
 
 function compatibleKey() {
   return process.env.AI_COMPATIBLE_API_KEY
-    ?? (activeProvider() === "openai-compatible" ? process.env.AI_API_KEY : undefined);
+    || (activeProvider() === "openai-compatible" ? process.env.AI_API_KEY : undefined);
 }
 
 function openAIBaseUrl() {
   return process.env.OPENAI_API_URL
-    ?? (activeProvider() === "openai" ? process.env.AI_API_URL || "https://api.openai.com/v1" : "https://api.openai.com/v1");
+    || (activeProvider() === "openai" ? process.env.AI_API_URL || "https://api.openai.com/v1" : "https://api.openai.com/v1");
 }
 
 function compatibleUrl() {
   return process.env.AI_COMPATIBLE_API_URL
-    ?? (activeProvider() === "openai-compatible" ? process.env.AI_API_URL : undefined);
+    || (activeProvider() === "openai-compatible" ? process.env.AI_API_URL : undefined);
 }
 
 /** Create a model using an explicitly selected, server-configured provider. */
