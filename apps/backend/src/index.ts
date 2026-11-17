@@ -17,7 +17,7 @@ app.get("/api/v1/capabilities", async () => ({
   ai: { ...getAIConfiguration(), mode: process.env.AI_PROVIDER ?? "ollama" },
   integrations: {
     mcp: { enabled: process.env.MCP_ENABLED !== "false", endpoint: "/mcp", transport: "streamable-http" },
-    rest: { enabled: true, endpoints: ["GET /api/v1/health", "GET /api/v1/capabilities", "POST /api/v1/plan"] },
+    rest: { enabled: true, endpoints: ["GET /api/v1/health", "GET /api/v1/capabilities", "GET /api/v1/models", "POST /api/v1/plan"] },
     modules: ["canvas-planner", "data-connectors", "vector-search", "image-generation", "external-apis"],
   },
 }));
