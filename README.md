@@ -92,7 +92,7 @@ The initial local model default is `qwen2.5:7b`. Other Ollama models can be sele
 The floating prompt bar includes a hierarchical model selector. Open it to choose an AI provider, then drill into that provider's model list. Use **All providers** to move back up and switch provider. The selected provider and model are sent with the prompt and applied by the backend; this is not a visual-only preference.
 
 - **Ollama:** Canvasium discovers installed local models from the Ollama tags endpoint. Optionally set `OLLAMA_MODELS` to restrict the models shown.
-- **OpenAI:** Set `OPENAI_API_KEY` and a comma-separated `OPENAI_MODELS` list to offer OpenAI alongside local Ollama without changing the default provider.
+- **OpenAI:** Set `OPENAI_API_KEY` and a comma-separated `OPENAI_MODELS` list to offer OpenAI alongside local Ollama without changing the default provider. Optionally set `OPENAI_API_URL` when using a compatible OpenAI endpoint; it defaults to `https://api.openai.com/v1`.
 - **OpenAI-compatible:** Set `AI_COMPATIBLE_API_URL`, `AI_COMPATIBLE_API_KEY`, and `AI_COMPATIBLE_MODELS` to add a separately configured compatible endpoint.
 - Existing single-provider deployments using `AI_PROVIDER`, `AI_API_KEY`, and `AI_API_URL` remain supported.
 
