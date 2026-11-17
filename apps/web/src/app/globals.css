@@ -62,7 +62,7 @@ button, textarea { font: inherit; }
 .visual-assets figcaption { margin-top: 8px; color: var(--muted); font-size: 12px; }
 .command-wrap { position: fixed; z-index: 20; right: 20px; bottom: 20px; left: 20px; max-width: 760px; margin: auto; }
 .command-bar { display: flex; min-height: 64px; align-items: center; gap: 12px; padding: 9px 10px 9px 16px; border: 1px solid #dfe1db; border-radius: 16px; background: #fff; box-shadow: 0 12px 40px rgb(27 30 25 / 10%); }
-.command-bar textarea { flex: 1; resize: none; border: 0; outline: 0; padding: 10px 0; }
+.command-bar textarea { min-width: 0; flex: 1; resize: none; border: 0; outline: 0; padding: 10px 0; }
 .command-bar textarea::placeholder { color: #a4a69f; }
 .command-bar > button { width: 42px; height: 42px; border: 0; border-radius: 12px; background: var(--ink); color: white; font-size: 22px; cursor: pointer; }
 .command-bar > button:disabled { background: #d2d4ce; cursor: not-allowed; }
