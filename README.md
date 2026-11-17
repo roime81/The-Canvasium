@@ -71,32 +71,130 @@ pnpm build
 
 The smoke check sends a deterministic offline prompt, so it does not need an API key or call an external model. Attach a CSV/Parquet file in the browser to test local DuckDB schema inspection. Run `pnpm legacy:dev` to open the existing prototype on port `5173` and its tracker at `/tracker`.
 
-## Connect an AI provider (optional)
+## Local-first AI architecture
 
-The new Fastify planner supports OpenAI through the Vercel AI SDK. Create a local environment file:
+Canvasium uses an **open-source-first, provider-neutral AI runtime**. The default planner runs against a locally hosted [Ollama](https://ollama.com/) instance, so a fresh installation does not need a commercial LLM account or API key.
+
+### AI provider layer
+
+The Fastify backend calls a provider adapter rather than a vendor-specific model directly.
+
+| Mode | Provider | Configuration | Purpose |
+| --- | --- | --- | --- |
+| Local (default) | Ollama | `AI_PROVIDER=ollama` | Private/local inference using open models |
+| Commercial-ready | OpenAI-compatible API | `AI_PROVIDER=openai` | Optional hosted model integration |
+| Compatible endpoint | OpenAI-compatible API | `AI_PROVIDER=openai-compatible` | Future hosted or self-managed endpoints |
+
+The initial local model default is `qwen2.5:7b`. Other Ollama models can be selected with `AI_MODEL`, for example `llama3.1:8b`, `mistral:7b`, or another model supported by your Ollama installation. Model availability and hardware requirements depend on the model you pull.
+
+### Install and run the local LLM
+
+1. Install Ollama from [ollama.com](https://ollama.com/).
+2. Start the Ollama service.
+3. Pull a model:
+
+```sh
+ollama pull qwen2.5:7b
+```
+
+4. Copy the environment template and keep the default local settings:
 
 ```sh
 cp .env.example .env
+# AI_PROVIDER=ollama
+# AI_MODEL=qwen2.5:7b
+# OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
 ```
 
-Set an OpenAI API key and a model in `.env`:
+5. Start Canvasium:
+
+```sh
+pnpm install
+pnpm dev
+```
+
+Ollama must be reachable from the backend process. In Docker or a remote deployment, replace `127.0.0.1` with the Ollama service hostname or private endpoint. Do not expose Ollama's unauthenticated local port directly to the public internet.
+
+Without a reachable model, use the explicit offline header for deterministic starter plans; a configured but unavailable LLM returns a provider error rather than silently pretending that AI inference succeeded.
+
+### Enable a commercial LLM later
+
+The provider boundary is already prepared for OpenAI-compatible commercial endpoints. To opt in, configure server-side secrets:
 
 ```env
-AI_API_KEY=your_openai_api_key
+AI_PROVIDER=openai
+AI_API_URL=https://api.openai.com/v1
+AI_API_KEY=your_server_side_key
 AI_MODEL=gpt-4o-mini
 ```
 
-Restart `pnpm dev` after changing `.env`, then open port `3000` and submit a prompt in the command bar. The browser sends the prompt and connected-source schemas to Fastify; Fastify requests a structured canvas plan from OpenAI, validates it, and returns document, dashboard, or visual blocks for the canvas.
+For another OpenAI-compatible service, set `AI_PROVIDER=openai-compatible`, provide its base URL in `AI_API_URL`, and supply its key in `AI_API_KEY`. Restart the backend after changing configuration. The browser never receives provider credentials. Commercial image generation remains an optional OpenAI-specific capability and is not required for local text planning.
 
-For Codespaces, store `AI_API_KEY` as a Codespaces secret rather than committing it:
+### MCP (Model Context Protocol)
 
-1. Open **GitHub Settings → Codespaces → Secrets**.
-2. Create a secret named `AI_API_KEY` with your OpenAI API key.
-3. Rebuild or create the Codespace, then set `AI_MODEL` in `.env` if you want a model other than `gpt-4o-mini`.
+Canvasium exposes an MCP Streamable HTTP endpoint at:
 
-Without `AI_API_KEY`, Canvasium stays fully runnable using deterministic local plans. This is the expected mode for `pnpm codespaces:smoke`; it never sends a request to an external model.
+```
+POST http://localhost:3001/mcp
+```
 
-Gemini and Grok are not currently wired into the new planner. Adding Gemini requires an `@ai-sdk/google` adapter; Grok requires an OpenAI-compatible xAI client, plus provider/model selection configuration. Do not put provider keys in client-side environment variables or commit them to the repository.
+The initial MCP tool is `canvas_plan`, which accepts a natural-language prompt and optional connected-source metadata and returns a validated Canvasium plan. The endpoint supports MCP initialization, ping, tool discovery, and tool invocation using JSON-RPC.
+
+Set `MCP_ENABLED=false` to disable the endpoint. Set a strong `MCP_API_KEY` before allowing remote MCP clients; clients authenticate with `Authorization: Bearer <key>`. Keep the endpoint on a private network and place it behind TLS and an authenticated gateway when deployed. Only expose tools that have explicit authorization and input validation.
+
+Example MCP initialization request:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-03-26",
+    "capabilities": {},
+    "clientInfo": { "name": "canvasium-client", "version": "1.0.0" }
+  }
+}
+```
+
+### Versioned REST API
+
+The backend also exposes stable integration endpoints:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/health` | API health check |
+| GET | `/api/v1/capabilities` | Runtime, provider, MCP and module discovery |
+| POST | `/api/v1/plan` | Generate a validated workspace plan |
+| POST | `/mcp` | MCP JSON-RPC over Streamable HTTP |
+
+The existing `POST /api/plan` endpoint remains available for compatibility. The versioned plan endpoint accepts the shared `PlanRequestSchema` payload. Keep the Fastify service private behind the Next.js application or an authenticated API gateway; set the same non-empty `INTERNAL_API_SECRET` for the Next.js proxy and backend in production.
+
+### Ready-mode integration modules
+
+Canvasium is structured to add capabilities without coupling the canvas UI to a provider or integration vendor. The backend capability registry currently advertises these integration areas:
+
+| Module | Current state | Integration contract |
+| --- | --- | --- |
+| Canvas planner | Available | Validated prompt-to-canvas plan |
+| Local LLM | Available with Ollama | OpenAI-compatible local inference |
+| Commercial LLM | Adapter-ready | Server-side provider URL, key and model |
+| MCP tools | Initial tool available | MCP tool discovery and invocation |
+| Data connectors | Existing framework | Connector registry and source metadata |
+| Vector search | Existing adapter interface | Injected vector-index implementation |
+| Image generation | Local SVG fallback; commercial adapter optional | Provider-backed asset generation |
+| External APIs | Ready for extension | Versioned REST endpoints and connector adapters |
+
+“Ready” means the integration boundary and extension point are defined; it does not mean every external service is already implemented or connected. Future modules should be independently configurable, disabled by default until credentials and permissions are supplied, and validated at the backend boundary.
+
+### AI security principles
+
+- Keep LLM keys, MCP credentials and external API secrets on the server.
+- Do not send uploaded file contents to the model by default; the planner receives source metadata and schemas only.
+- Validate all model output with `CanvasPlanSchema` before applying it to a workspace.
+- Require explicit authorization and least-privilege scopes for MCP tools and external connectors.
+- Keep MCP and backend endpoints private unless protected by TLS, authentication, rate limits and audit logging.
+- Record provider/model selection and request outcomes without logging secrets or unnecessary prompt content.
 
 ## Google sign-in and administration
 
@@ -113,7 +211,7 @@ In Google Cloud, add `http://localhost:3000/api/auth/callback/google` and the pr
 
 After Google sign-in and PostgreSQL are configured, Canvasium persists one private canvas per user and records prompt outcomes for rate limiting and audit history. The planner permits 20 authenticated requests per minute per user. Local CSV/Parquet dashboards query the attached file with DuckDB-Wasm and render their first numeric series in the browser; files are never uploaded to the server and must be reattached after a page reload.
 
-Set `AI_API_KEY` to enable structured OpenAI planning and OpenAI Images (`OPENAI_IMAGE_MODEL` defaults to `gpt-image-1`) for visual requests. Without a key, Canvasium uses deterministic document, dashboard, and local SVG visual plans. Failed image-provider requests are returned as errors rather than silently claiming an image was generated.
+The default structured planner uses local Ollama inference. Configure `AI_PROVIDER=openai` and server-side `AI_API_KEY` to opt into commercial OpenAI planning. OpenAI Images (`OPENAI_IMAGE_MODEL`, default `gpt-image-1`) is an optional commercial-only visual capability; local SVG previews remain available without it. Failed image-provider requests are returned as errors rather than silently claiming an image was generated.
 
 Set `SENTRY_DSN` for server errors and `NEXT_PUBLIC_SENTRY_DSN` for browser errors. Before deployment, set `AUTH_TRUST_HOST=true`, a strong `AUTH_SECRET`, and `INTERNAL_API_SECRET`; configure all values as deployment secrets. Run `pnpm db:migrate` during release, keep Fastify private behind the Next.js app, and use the provided health endpoint for hosting checks.
 
@@ -171,9 +269,11 @@ The first downloadable files are produced by **Actions → Desktop release → R
 
 ### Use an optional OpenAI key
 
-To enable OpenAI text planning and image generation, create `%APPDATA%\\The Canvasium\\.env` after the first launch:
+To opt into commercial OpenAI text planning and image generation, create `%APPDATA%\\The Canvasium\\.env` after the first launch:
 
 ```env
+AI_PROVIDER=openai
+AI_API_URL=https://api.openai.com/v1
 AI_API_KEY=your_openai_api_key
 AI_MODEL=gpt-4o-mini
 OPENAI_IMAGE_MODEL=gpt-image-1
