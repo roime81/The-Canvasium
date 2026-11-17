@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import Fastify from "fastify";
 import { PlanRequestSchema } from "@canvasium/types";
 import { createPlan } from "./planner.js";
-import { getAIConfiguration, getAIModelCatalog } from "./ai-provider.js";
+import { getAIConfiguration, getAIModelCatalog, isAIModelAllowed } from "./ai-provider.js";
 import { registerMcpEndpoint } from "./mcp.js";
 
 dotenv.config({ path: "../../.env" });
@@ -47,6 +47,9 @@ const handlePlan = async (request: any, reply: any) => {
     }
     if (model !== undefined && (!model || model.length > 128 || (model.split("").some((character) => character.charCodeAt(0) < 32)))) {
       return reply.code(400).send({ error: "Invalid AI model selection." });
+    }
+    if (provider && model && !(await isAIModelAllowed(provider, model))) {
+      return reply.code(400).send({ error: "The selected model is not available for this provider." });
     }
     return await createPlan(parsed.data, { offline, provider, model });
   } catch (error) {
