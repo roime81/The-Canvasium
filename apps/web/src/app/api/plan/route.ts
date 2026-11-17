@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   if (requestedProvider && !["ollama", "openai", "openai-compatible"].includes(requestedProvider)) {
     return NextResponse.json({ error: "Unsupported AI provider selection." }, { status: 400 });
   }
-  if (requestedModel !== undefined && (!requestedModel.trim() || requestedModel.length > 128 || /[\\r\\n\\0]/.test(requestedModel))) {
+  if (requestedModel !== undefined && (!requestedModel.trim() || requestedModel.length > 128 || (requestedModel.split("").some((character) => character.charCodeAt(0) < 32)))) {
     return NextResponse.json({ error: "Invalid AI model selection." }, { status: 400 });
   }
   const selectedProvider = requestedProvider ?? settings?.defaultProvider ?? process.env.AI_PROVIDER ?? "ollama";
