@@ -42,13 +42,13 @@ const handlePlan = async (request: any, reply: any) => {
     const model = typeof request.headers["x-canvasium-model"] === "string"
       ? request.headers["x-canvasium-model"].trim()
       : undefined;
-    if (provider && !["ollama", "openai", "openai-compatible"].includes(provider)) {
+    if (!offline && provider && !["ollama", "openai", "openai-compatible"].includes(provider)) {
       return reply.code(400).send({ error: "Unsupported AI provider selection." });
     }
-    if (model !== undefined && (!model || model.length > 128 || (model.split("").some((character) => character.charCodeAt(0) < 32)))) {
+    if (!offline && model !== undefined && (!model || model.length > 128 || (model.split("").some((character) => character.charCodeAt(0) < 32)))) {
       return reply.code(400).send({ error: "Invalid AI model selection." });
     }
-    if (provider && model && !(await isAIModelAllowed(provider, model))) {
+    if (!offline && provider && model && !(await isAIModelAllowed(provider, model))) {
       return reply.code(400).send({ error: "The selected model is not available for this provider." });
     }
     return await createPlan(parsed.data, { offline, provider, model });
