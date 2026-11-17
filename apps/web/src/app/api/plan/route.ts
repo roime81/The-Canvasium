@@ -45,12 +45,28 @@ export async function POST(request: Request) {
     }
   }
 
+  const requestedProvider = request.headers.get("x-canvasium-provider") ?? undefined;
+  const requestedModel = request.headers.get("x-canvasium-model") ?? undefined;
+  if (requestedProvider && !["ollama", "openai", "openai-compatible"].includes(requestedProvider)) {
+    return NextResponse.json({ error: "Unsupported AI provider selection." }, { status: 400 });
+  }
+  if (requestedModel !== undefined && (!requestedModel.trim() || requestedModel.length > 128 || /[\\r\\n\\0]/.test(requestedModel))) {
+    return NextResponse.json({ error: "Invalid AI model selection." }, { status: 400 });
+  }
+  const selectedProvider = requestedProvider ?? settings?.defaultProvider ?? process.env.AI_PROVIDER ?? "ollama";
+  const selectedModel = requestedModel?.trim()
+    ?? (selectedProvider === settings?.defaultProvider
+      ? settings?.defaultModel
+      : process.env.AI_MODEL)
+    ?? "qwen2.5:7b";
+
   const response = await fetch(`${backendUrl}/api/plan`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       "x-canvasium-offline": offline ? "true" : "false",
-      "x-canvasium-model": settings?.defaultModel ?? process.env.AI_MODEL ?? "gpt-4o-mini",
+      "x-canvasium-provider": selectedProvider,
+      "x-canvasium-model": selectedModel,
       ...(process.env.INTERNAL_API_SECRET ? { "x-canvasium-internal-secret": process.env.INTERNAL_API_SECRET } : {}),
     },
     body,
