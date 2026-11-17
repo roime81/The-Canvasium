@@ -7,6 +7,7 @@ All notable changes to The Canvasium are documented in this file.
 ### Added
 - Added a hierarchical provider/model selector to the floating prompt bar, with drill-down into a provider's model list and a back navigation action.
 - Added runtime model discovery for installed Ollama models and a non-secret `GET /api/v1/models` catalogue endpoint.
+- Added server-side validation of selected provider/model IDs against the configured model catalogue.
 - Added optional concurrent OpenAI and OpenAI-compatible provider configuration so users can switch between local and commercial model families without exposing credentials to the browser.
 - Added a provider abstraction for AI inference, keeping model selection independent of the Canvasium planner.
 - Made Ollama the default local LLM runtime, using its OpenAI-compatible chat API.
@@ -35,4 +36,4 @@ All notable changes to The Canvasium are documented in this file.
 - Ollama must be installed and running separately; this repository does not bundle model weights.
 - The initial MCP implementation exposes the canvas planning tool. Additional tools, resources, prompts, and external-system adapters remain future extensions.
 - “Ready-mode” denotes defined integration boundaries and capability discovery, not a claim that every listed external integration is already connected.
-- Automated build, typecheck, and protocol conformance tests have not yet been run as part of this documentation and integration update.
+- Automated build, typecheck, and browser-level tests have not yet been run for this prompt-bar selector update.
