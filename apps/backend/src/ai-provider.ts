@@ -68,7 +68,7 @@ export function createCanvasiumModel(modelOverride?: string, providerOverride?: 
     if (!apiKey) throw new Error("OpenAI is not configured. Set OPENAI_API_KEY on the server.");
     const provider = createOpenAI({
       name: "openai",
-      baseURL: "https://api.openai.com/v1",
+      baseURL: process.env.AI_API_URL || "https://api.openai.com/v1",
       apiKey,
     });
     return { model: provider.chat(model), provider: providerName, modelName: model };
@@ -111,11 +111,16 @@ export async function getAIModelCatalog() {
     currentProvider === "ollama" ? "qwen2.5:7b" : "gpt-4o-mini"
   );
   const ollamaModels = await installedOllamaModels();
-  const localModels = unique([
-    ...ollamaModels,
-    ...csv(process.env.OLLAMA_MODELS),
-    ...(currentProvider === "ollama" ? [configuredModel] : []),
-  ]);
+  const configuredLocalModels = csv(process.env.OLLAMA_MODELS);
+  const localModels = configuredLocalModels.length
+    ? unique(configuredLocalModels)
+    : unique([
+      ...ollamaModels,
+      ...(currentProvider === "ollama" ? [configuredModel] : []),
+    ]);
+  const localDefaultModel = localModels.includes(configuredModel)
+    ? configuredModel
+    : localModels[0] ?? "qwen2.5:7b";
 
   const providers: Array<{
     id: CanvasiumProviderId;
@@ -127,21 +132,21 @@ export async function getAIModelCatalog() {
     id: "ollama",
     label: "Ollama · Local",
     description: "Open models running on your own Ollama instance",
-    defaultModel: currentProvider === "ollama" ? configuredModel : localModels[0] ?? "qwen2.5:7b",
+    defaultModel: localDefaultModel,
     models: localModels.length ? localModels : ["qwen2.5:7b"],
   }];
 
   const openKey = openAIKey();
   if (openKey) {
-    const models = unique([
-      ...csv(process.env.OPENAI_MODELS),
-      ...(currentProvider === "openai" ? [configuredModel] : []),
-    ]);
+    const configuredModels = csv(process.env.OPENAI_MODELS);
+    const models = unique(configuredModels.length
+      ? configuredModels
+      : currentProvider === "openai" ? [configuredModel] : []);
     if (models.length) providers.push({
       id: "openai",
       label: "OpenAI",
       description: "Commercial OpenAI models using server-side credentials",
-      defaultModel: currentProvider === "openai" ? configuredModel : models[0],
+      defaultModel: models.includes(configuredModel) ? configuredModel : models[0],
       models,
     });
   }
@@ -149,15 +154,15 @@ export async function getAIModelCatalog() {
   const compatKey = compatibleKey();
   const compatUrl = compatibleUrl();
   if (compatKey && compatUrl) {
-    const models = unique([
-      ...csv(process.env.AI_COMPATIBLE_MODELS),
-      ...(currentProvider === "openai-compatible" ? [configuredModel] : []),
-    ]);
+    const configuredModels = csv(process.env.AI_COMPATIBLE_MODELS);
+    const models = unique(configuredModels.length
+      ? configuredModels
+      : currentProvider === "openai-compatible" ? [configuredModel] : []);
     if (models.length) providers.push({
       id: "openai-compatible",
       label: "OpenAI-compatible",
       description: "A configured hosted or self-managed compatible endpoint",
-      defaultModel: currentProvider === "openai-compatible" ? configuredModel : models[0],
+      defaultModel: models.includes(configuredModel) ? configuredModel : models[0],
       models,
     });
   }
