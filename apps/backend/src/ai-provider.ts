@@ -44,6 +44,11 @@ function compatibleKey() {
     ?? (activeProvider() === "openai-compatible" ? process.env.AI_API_KEY : undefined);
 }
 
+function openAIBaseUrl() {
+  return process.env.OPENAI_API_URL
+    ?? (activeProvider() === "openai" ? process.env.AI_API_URL || "https://api.openai.com/v1" : "https://api.openai.com/v1");
+}
+
 function compatibleUrl() {
   return process.env.AI_COMPATIBLE_API_URL
     ?? (activeProvider() === "openai-compatible" ? process.env.AI_API_URL : undefined);
@@ -68,7 +73,7 @@ export function createCanvasiumModel(modelOverride?: string, providerOverride?: 
     if (!apiKey) throw new Error("OpenAI is not configured. Set OPENAI_API_KEY on the server.");
     const provider = createOpenAI({
       name: "openai",
-      baseURL: process.env.AI_API_URL || "https://api.openai.com/v1",
+      baseURL: openAIBaseUrl(),
       apiKey,
     });
     return { model: provider.chat(model), provider: providerName, modelName: model };
