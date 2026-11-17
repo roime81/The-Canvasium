@@ -145,6 +145,7 @@ function PromptBar() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [modelCatalog, setModelCatalog] = useState<ModelCatalog | null>(null);
+  const [modelsLoading, setModelsLoading] = useState(true);
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -162,9 +163,13 @@ function PromptBar() {
         setModelCatalog(catalog);
         setSelectedProvider(catalog.defaultProvider);
         setSelectedModel(catalog.defaultModel);
+        setModelsLoading(false);
       })
       .catch(() => {
-        if (active) setModelCatalog(null);
+        if (active) {
+          setModelCatalog(null);
+          setModelsLoading(false);
+        }
       });
     return () => { active = false; };
   }, []);
@@ -267,7 +272,7 @@ function PromptBar() {
                   <span className="model-option-chevron" aria-hidden="true">›</span>
                 </button>
               ))}
-              {!modelCatalog && <p className="model-picker-empty">Loading configured providers…</p>}
+              {!modelCatalog && <p className="model-picker-empty">{modelsLoading ? "Loading configured providers…" : "Could not load models. Check the backend connection."}</p>}
               {modelCatalog?.providers.length === 0 && <p className="model-picker-empty">No AI providers are configured.</p>}
             </>
           ) : (
@@ -322,7 +327,7 @@ function PromptBar() {
         >
           <span className="model-trigger-copy">
             <strong>{activeModel ?? "AI model"}</strong>
-            <small>{activeProvider?.label ?? (modelCatalog ? "Select provider" : "Loading models…")}</small>
+            <small>{activeProvider?.label ?? (modelsLoading ? "Loading models…" : "Model list unavailable")}</small>
           </span>
           <span aria-hidden="true">⌄</span>
         </button>
