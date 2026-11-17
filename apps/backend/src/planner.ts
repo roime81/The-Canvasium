@@ -157,7 +157,7 @@ export function createStarterPlan({ prompt, sources }: PlanRequest): CanvasPlan 
   };
 }
 
-export async function createPlan(request: PlanRequest, options: { offline?: boolean; model?: string } = {}): Promise<{
+export async function createPlan(request: PlanRequest, options: { offline?: boolean; model?: string; provider?: string } = {}): Promise<{
   plan: CanvasPlan;
   generatedBy: "starter-planner" | "ollama" | "commercial";
 }> {
@@ -165,8 +165,8 @@ export async function createPlan(request: PlanRequest, options: { offline?: bool
     return { plan: createStarterPlan(request), generatedBy: "starter-planner" };
   }
 
-  const { createCanvasiumModel } = await import("./ai-provider.js");
-  const selected = createCanvasiumModel(options.model);
+  const { createCanvasiumModel, getOpenAIImageApiKey } = await import("./ai-provider.js");
+  const selected = createCanvasiumModel(options.model, options.provider);
   const { object } = await generateObject({
     model: selected.model,
     schema: CanvasPlanSchema,
@@ -181,7 +181,7 @@ export async function createPlan(request: PlanRequest, options: { offline?: bool
   });
 
   const isCommercial = selected.provider !== "ollama";
-  const apiKey = process.env.AI_API_KEY;
+  const apiKey = getOpenAIImageApiKey();
   const plan = isCommercial && selected.provider === "openai" && apiKey
     ? await withGeneratedImages(object, request.prompt, apiKey)
     : withVisualPreviews(object, request.prompt);
