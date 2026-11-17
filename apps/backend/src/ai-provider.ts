@@ -34,9 +34,9 @@ export function createCanvasiumModel(modelOverride?: string) {
 
 export function getAIConfiguration() {
   return {
-    provider: process.env.AI_PROVIDER ?? "ollama",
+    provider: (process.env.AI_PROVIDER ?? "ollama").toLowerCase(),
     model: process.env.AI_MODEL ?? "qwen2.5:7b",
-    baseURL: process.env.AI_PROVIDER === "ollama"
+    baseURL: (process.env.AI_PROVIDER ?? "ollama").toLowerCase() === "ollama"
       ? process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434/v1"
       : process.env.AI_API_URL ?? null,
   };
