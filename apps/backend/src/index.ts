@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import Fastify from "fastify";
 import { PlanRequestSchema } from "@canvasium/types";
 import { createPlan } from "./planner.js";
-import { getAIConfiguration } from "./ai-provider.js";
+import { getAIConfiguration, getAIModelCatalog } from "./ai-provider.js";
 import { registerMcpEndpoint } from "./mcp.js";
 
 dotenv.config({ path: "../../.env" });
@@ -22,6 +22,7 @@ app.get("/api/v1/capabilities", async () => ({
   },
 }));
 app.get("/api/v1/health", async () => ({ status: "ok", service: "canvasium-api" }));
+app.get("/api/v1/models", async () => getAIModelCatalog());
 
 const handlePlan = async (request: any, reply: any) => {
   const internalSecret = process.env.INTERNAL_API_SECRET;
@@ -35,10 +36,19 @@ const handlePlan = async (request: any, reply: any) => {
 
   try {
     const offline = request.headers["x-canvasium-offline"] === "true";
-    const model = typeof request.headers["x-canvasium-model"] === "string"
-      ? request.headers["x-canvasium-model"]
+    const provider = typeof request.headers["x-canvasium-provider"] === "string"
+      ? request.headers["x-canvasium-provider"]
       : undefined;
-    return await createPlan(parsed.data, { offline, model });
+    const model = typeof request.headers["x-canvasium-model"] === "string"
+      ? request.headers["x-canvasium-model"].trim()
+      : undefined;
+    if (provider && !["ollama", "openai", "openai-compatible"].includes(provider)) {
+      return reply.code(400).send({ error: "Unsupported AI provider selection." });
+    }
+    if (model !== undefined && (!model || model.length > 128 || /[\\r\\n\\0]/.test(model))) {
+      return reply.code(400).send({ error: "Invalid AI model selection." });
+    }
+    return await createPlan(parsed.data, { offline, provider, model });
   } catch (error) {
     request.log.error(
       { errorName: error instanceof Error ? error.name : "UnknownError" },
