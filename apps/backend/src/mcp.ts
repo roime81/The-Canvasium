@@ -29,6 +29,9 @@ function rpcError(id: JsonRpcRequest["id"], code: number, message: string) {
 export async function registerMcpEndpoint(app: FastifyInstance) {
   app.post("/mcp", async (request, reply) => {
     const configuredKey = process.env.MCP_API_KEY;
+    if (process.env.NODE_ENV === "production" && !configuredKey) {
+      return reply.code(503).send(rpcError(null, -32001, "MCP_API_KEY must be configured in production"));
+    }
     if (configuredKey && request.headers.authorization !== `Bearer ${configuredKey}`) {
       return reply.code(401).send(rpcError(null, -32001, "Unauthorized MCP client"));
     }
