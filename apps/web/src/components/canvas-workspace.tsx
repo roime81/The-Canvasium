@@ -126,10 +126,53 @@ function LocalChart({ sourceId, title }: { sourceId: string; title: string }) {
   );
 }
 
+type ModelProvider = {
+  id: "ollama" | "openai" | "openai-compatible";
+  label: string;
+  description: string;
+  defaultModel: string;
+  models: string[];
+};
+
+type ModelCatalog = {
+  defaultProvider: string;
+  defaultModel: string;
+  providers: ModelProvider[];
+};
+
 function PromptBar() {
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [modelCatalog, setModelCatalog] = useState<ModelCatalog | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [selectedModel, setSelectedModel] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerLevel, setPickerLevel] = useState<"providers" | "models">("providers");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/v1/models")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load available AI models.");
+        return response.json() as Promise<ModelCatalog>;
+      })
+      .then((catalog) => {
+        if (!active) return;
+        setModelCatalog(catalog);
+        setSelectedProvider(catalog.defaultProvider);
+        setSelectedModel(catalog.defaultModel);
+      })
+      .catch(() => {
+        if (active) setModelCatalog(null);
+      });
+    return () => { active = false; };
+  }, []);
+
+  const activeProvider = modelCatalog?.providers.find((provider) => provider.id === selectedProvider);
+  const activeModel = activeProvider?.models.includes(selectedModel)
+    ? selectedModel
+    : activeProvider?.defaultModel;
   const replaceBlocks = useCanvasStore((state) => state.replaceBlocks);
   const sources = useCanvasStore((state) => state.canvas.connectedSources);
   const addSource = useCanvasStore((state) => state.addSource);
@@ -144,7 +187,11 @@ function PromptBar() {
     try {
       const response = await fetch("/api/plan", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          ...(selectedProvider ? { "x-canvasium-provider": selectedProvider } : {}),
+          ...(activeModel ? { "x-canvasium-model": activeModel } : {}),
+        },
         body: JSON.stringify({ prompt: request, sources }),
       });
       if (!response.ok) throw new Error(`Planner request failed (${response.status}).`);
@@ -197,11 +244,88 @@ function PromptBar() {
   return (
     <div className="command-wrap">
       {error && <p className="error-message" role="alert">{error}</p>}
+      {pickerOpen && (
+        <div className="model-picker" role="dialog" aria-label="Choose an AI model">
+          {pickerLevel === "providers" ? (
+            <>
+              <p className="model-picker-heading">Choose a provider</p>
+              {modelCatalog?.providers.map((provider) => (
+                <button
+                  type="button"
+                  className={selectedProvider === provider.id ? "model-picker-option is-selected" : "model-picker-option"}
+                  key={provider.id}
+                  onClick={() => {
+                    setSelectedProvider(provider.id);
+                    setSelectedModel(provider.defaultModel);
+                    setPickerLevel("models");
+                  }}
+                >
+                  <span className="model-option-copy">
+                    <strong>{provider.label}</strong>
+                    <small>{provider.description}</small>
+                  </span>
+                  <span className="model-option-chevron" aria-hidden="true">›</span>
+                </button>
+              ))}
+              {!modelCatalog && <p className="model-picker-empty">Loading configured providers…</p>}
+              {modelCatalog?.providers.length === 0 && <p className="model-picker-empty">No AI providers are configured.</p>}
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="model-picker-back"
+                onClick={() => setPickerLevel("providers")}
+              >
+                <span aria-hidden="true">‹</span> All providers
+              </button>
+              <p className="model-picker-heading">{activeProvider?.label ?? "Models"}</p>
+              {activeProvider?.models.map((model) => (
+                <button
+                  type="button"
+                  className={selectedModel === model ? "model-picker-option model-choice is-selected" : "model-picker-option model-choice"}
+                  key={model}
+                  onClick={() => {
+                    setSelectedModel(model);
+                    setPickerOpen(false);
+                    setPickerLevel("providers");
+                  }}
+                >
+                  <span className="model-option-copy">
+                    <strong>{model}</strong>
+                    <small>{selectedModel === model ? "Currently selected" : "Use this model"}</small>
+                  </span>
+                  {selectedModel === model && <span className="model-option-check" aria-hidden="true">✓</span>}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      )}
       <form className="command-bar" onSubmit={submitPrompt}>
         <label className="attach-button" aria-label="Attach CSV, PDF, or Parquet">
           <input type="file" accept=".csv,.pdf,.parquet,text/csv,application/pdf" onChange={attachFile} />
           <span aria-hidden="true">+</span>
         </label>
+        <button
+          type="button"
+          className="model-trigger"
+          aria-label="Choose AI provider and model"
+          aria-expanded={pickerOpen}
+          onClick={() => {
+            setPickerLevel("providers");
+            setPickerOpen((open) => !open);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setPickerOpen(false);
+          }}
+        >
+          <span className="model-trigger-copy">
+            <strong>{activeModel ?? "AI model"}</strong>
+            <small>{activeProvider?.label ?? (modelCatalog ? "Select provider" : "Loading models…")}</small>
+          </span>
+          <span aria-hidden="true">⌄</span>
+        </button>
         <textarea
           aria-label="Describe what you want to create"
           placeholder="What would you like to make?"
