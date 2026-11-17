@@ -168,3 +168,21 @@ button, textarea { font: inherit; }
   .model-trigger-copy strong { font-size: 10px; }
   .model-picker { left: 0; width: min(330px, calc(100vw - 24px)); }
 }
+
+
+/* Keep the model trigger visually distinct from the submit action. */
+.command-bar > .model-trigger {
+  width: auto;
+  height: auto;
+  flex: 0 1 auto;
+  background: #fafbf9;
+  color: var(--ink);
+  font-size: 11px;
+}
+.command-bar > .model-trigger:hover,
+.command-bar > .model-trigger[aria-expanded="true"] {
+  background: #f4f6f2;
+}
+@media (max-width: 640px) {
+  .command-bar > .model-trigger { width: auto; height: auto; }
+}
