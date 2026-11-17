@@ -77,7 +77,7 @@ Canvasium uses an **open-source-first, provider-neutral AI runtime**. The defaul
 
 ### AI provider layer
 
-The Fastify backend calls a provider adapter rather than a vendor-specific model directly.
+The Fastify backend calls a provider adapter rather than a vendor-specific model directly. The prompt-bar model selector discovers configured providers and lets each user choose a provider/model for every request.
 
 | Mode | Provider | Configuration | Purpose |
 | --- | --- | --- | --- |
@@ -86,6 +86,17 @@ The Fastify backend calls a provider adapter rather than a vendor-specific model
 | Compatible endpoint | OpenAI-compatible API | `AI_PROVIDER=openai-compatible` | Future hosted or self-managed endpoints |
 
 The initial local model default is `qwen2.5:7b`. Other Ollama models can be selected with `AI_MODEL`, for example `llama3.1:8b`, `mistral:7b`, or another model supported by your Ollama installation. Model availability and hardware requirements depend on the model you pull.
+
+### Choose a model in the prompt bar
+
+The floating prompt bar includes a hierarchical model selector. Open it to choose an AI provider, then drill into that provider's model list. Use **All providers** to move back up and switch provider. The selected provider and model are sent with the prompt and applied by the backend; this is not a visual-only preference.
+
+- **Ollama:** Canvasium discovers installed local models from the Ollama tags endpoint. Optionally set `OLLAMA_MODELS` to restrict the models shown.
+- **OpenAI:** Set `OPENAI_API_KEY` and a comma-separated `OPENAI_MODELS` list to offer OpenAI alongside local Ollama without changing the default provider.
+- **OpenAI-compatible:** Set `AI_COMPATIBLE_API_URL`, `AI_COMPATIBLE_API_KEY`, and `AI_COMPATIBLE_MODELS` to add a separately configured compatible endpoint.
+- Existing single-provider deployments using `AI_PROVIDER`, `AI_API_KEY`, and `AI_API_URL` remain supported.
+
+Only provider names, model IDs and labels are returned to the browser. API keys and endpoint credentials remain on the server. Commercial providers are shown only when their server-side credentials and model list are configured.
 
 ### Install and run the local LLM
 
@@ -165,6 +176,7 @@ The backend also exposes stable integration endpoints:
 | --- | --- | --- |
 | GET | `/api/v1/health` | API health check |
 | GET | `/api/v1/capabilities` | Runtime, provider, MCP and module discovery |
+| GET | `/api/v1/models` | Configured providers and available model IDs for the prompt selector |
 | POST | `/api/v1/plan` | Generate a validated workspace plan |
 | POST | `/mcp` | MCP JSON-RPC over Streamable HTTP |
 
