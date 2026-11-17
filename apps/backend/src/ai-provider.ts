@@ -105,7 +105,7 @@ export function getAIConfiguration() {
  * model list is discovered at runtime; commercial model lists are explicitly
  * configured by the operator rather than guessed from a provider catalogue.
  */
-export async function getAIModelCatalog() {
+async function buildAIModelCatalog() {
   const currentProvider = activeProvider();
   const configuredModel = process.env.AI_MODEL ?? (
     currentProvider === "ollama" ? "qwen2.5:7b" : "gpt-4o-mini"
@@ -178,4 +178,27 @@ export async function getAIModelCatalog() {
 /** Server-side key lookup for optional OpenAI image generation. */
 export function getOpenAIImageApiKey() {
   return openAIKey();
+}
+
+
+type AIModelCatalog = Awaited<ReturnType<typeof buildAIModelCatalog>>;
+let cachedModelCatalog: { expiresAt: number; value: AIModelCatalog } | undefined;
+let pendingModelCatalog: Promise<AIModelCatalog> | undefined;
+
+/** Cache discovery briefly so prompt submissions do not repeatedly query Ollama. */
+export async function getAIModelCatalog(): Promise<AIModelCatalog> {
+  if (cachedModelCatalog && cachedModelCatalog.expiresAt > Date.now()) return cachedModelCatalog.value;
+  pendingModelCatalog ??= buildAIModelCatalog();
+  try {
+    const value = await pendingModelCatalog;
+    cachedModelCatalog = { value, expiresAt: Date.now() + 30_000 };
+    return value;
+  } finally {
+    pendingModelCatalog = undefined;
+  }
+}
+
+export async function isAIModelAllowed(provider: string, model: string): Promise<boolean> {
+  const catalog = await getAIModelCatalog();
+  return catalog.providers.some((item) => item.id === provider && item.models.includes(model));
 }
