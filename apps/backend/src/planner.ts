@@ -1,5 +1,4 @@
 import { generateObject } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
 import { CanvasPlanSchema, type CanvasPlan, type PlanRequest } from "@canvasium/types";
 
 const escapeHtml = (content: string) => content
