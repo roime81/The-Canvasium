@@ -160,16 +160,16 @@ export function createStarterPlan({ prompt, sources }: PlanRequest): CanvasPlan 
 
 export async function createPlan(request: PlanRequest, options: { offline?: boolean; model?: string } = {}): Promise<{
   plan: CanvasPlan;
-  generatedBy: "starter-planner" | "ai-sdk";
+  generatedBy: "starter-planner" | "ollama" | "commercial";
 }> {
-  const apiKey = process.env.AI_API_KEY;
-  if (!apiKey || options.offline) {
+  if (options.offline) {
     return { plan: createStarterPlan(request), generatedBy: "starter-planner" };
   }
 
-  const provider = createOpenAI({ apiKey });
+  const { createCanvasiumModel } = await import("./ai-provider.js");
+  const selected = createCanvasiumModel(options.model);
   const { object } = await generateObject({
-    model: provider(options.model ?? process.env.AI_MODEL ?? "gpt-4o-mini"),
+    model: selected.model,
     schema: CanvasPlanSchema,
     system: [
       "Create a structured Canvasium plan for the user's request.",
@@ -181,8 +181,14 @@ export async function createPlan(request: PlanRequest, options: { offline?: bool
     prompt: `${request.prompt}\n\nConnected source metadata and schemas (no file contents): ${JSON.stringify(request.sources)}`,
   });
 
+  const isCommercial = selected.provider !== "ollama";
+  const apiKey = process.env.AI_API_KEY;
+  const plan = isCommercial && selected.provider === "openai" && apiKey
+    ? await withGeneratedImages(object, request.prompt, apiKey)
+    : withVisualPreviews(object, request.prompt);
+
   return {
-    plan: await withGeneratedImages(object, request.prompt, apiKey),
-    generatedBy: "ai-sdk",
+    plan,
+    generatedBy: isCommercial ? "commercial" : "ollama",
   };
 }
